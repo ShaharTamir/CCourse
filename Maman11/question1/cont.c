@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "..\utills\test_input.h"
 
 #define MAX_STRING_LENGTH 80
 #define MIN_ROW 1
@@ -11,34 +12,8 @@ int IsNumerical(char note);
 
 int main (int argc, char *argv[])
 {
-    FILE *file = stdin;
-
     printInstructions();
-
-    if(argc > 1)
-    {
-        int i = 1;
-        int testNumber = 1;    
-
-        for(i = 1; i < argc; ++i, ++testNumber)
-        {
-            file = fopen(argv[i], "r");
-            if(file)
-            {
-                printf("test number %d:\n", testNumber);
-                RunSingleConTest(file);
-                fclose(file);
-            }
-            else
-            {
-                printf("could not open file %s\n", argv[i]);
-            }
-        }
-    }
-    else
-    {
-        RunSingleConTest(file);
-    }
+    handleInput(argc, argv, &RunSingleConTest);
 
     return 0;
 }

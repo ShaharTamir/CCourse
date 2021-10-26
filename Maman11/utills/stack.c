@@ -13,9 +13,7 @@ Stack *StackCreate(int num_of_items, int item_size)
 
     if(num_of_items <= 0 || item_size <= 0)
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("Num of items or item size are invalid!");
-        #endif
+        STACK_LOG("Num of items or item size are invalid!");
         return NULL;
     }
 
@@ -23,9 +21,7 @@ Stack *StackCreate(int num_of_items, int item_size)
     
     if(NULL == new_stack)
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("Allocate Stack type malloc fail!");
-        #endif
+        STACK_LOG("Allocate Stack type malloc fail!");
         return NULL;
     }
 
@@ -33,9 +29,7 @@ Stack *StackCreate(int num_of_items, int item_size)
             
     if(NULL == new_stack->stack)
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("Allocate stack mem malloc fail!");
-        #endif
+        STACK_LOG("Allocate stack mem malloc fail!");
 
         free(new_stack);
         new_stack = NULL;
@@ -65,24 +59,18 @@ void StackPush(Stack *stack, void *input)
     {
         if((stack->top_index + 1) < stack->stack_size)
         {
-            #ifdef DEBUG_MODE
-                STACK_LOG("push is copy!");
-            #endif
+            STACK_LOG("push is copy!");
             ++stack->top_index;
             memcpy(&(((char*)stack->stack)[stack->top_index * stack->var_size]), input, stack->var_size);
         }
         else
         {
-            #ifdef DEBUG_MODE
-                STACK_LOG("stack is full!");
-            #endif
+            STACK_LOG("stack is full!");
         }
     }
     else
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("stack or input is NULL!");
-        #endif
+        STACK_LOG("stack or input is NULL!");
     }
 }
 
@@ -92,23 +80,17 @@ void StackPeek(Stack *stack, void *output)
     {
         if(stack->top_index >= 0) /* when stack is empty, top index is -1 */
         {
-            #ifdef DEBUG_MODE
-                STACK_LOG("top is copy!");
-            #endif
+            STACK_LOG("top is copy!");
             memcpy(output, &((char*)stack->stack)[stack->top_index * stack->var_size], stack->var_size);
         }
         else
         {
-            #ifdef DEBUG_MODE
-                STACK_LOG("stack is empty!");
-            #endif
+            STACK_LOG("stack is empty!");
         } 
     }
     else
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("stack or output is NULL!");
-        #endif
+        STACK_LOG("stack or output is NULL!");
     }
 }
 
@@ -121,9 +103,7 @@ void StackPop(Stack *stack, void *output)
 {
     if(NULL == output)
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("output is null!");
-        #endif
+        STACK_LOG("output is null!");
         return;
     }
 
@@ -134,9 +114,7 @@ void StackPop(Stack *stack, void *output)
     }
     else
     {
-        #ifdef DEBUG_MODE
-            STACK_LOG("stack is empty!");
-        #endif
+        STACK_LOG("stack is empty!");
     }
 }
 
