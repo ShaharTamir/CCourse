@@ -5,6 +5,8 @@
 
 typedef void (*InputTestFunc)(FILE*);
 
+void printInputInstructions(int maxInputLength);
+
 void handleInput(int argc, char *argv[], InputTestFunc single_test_func);
 
 

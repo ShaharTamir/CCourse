@@ -4,7 +4,6 @@
 #define MAX_STRING_LENGTH 80
 #define MIN_ROW 1
 
-void printInstructions();
 void RunSingleConTest(FILE* input);
 void contract(char s1[], char s2[]);
 int IsNeighbor(char a, char b);
@@ -12,19 +11,12 @@ int IsNumerical(char note);
 
 int main (int argc, char *argv[])
 {
-    printInstructions();
+    if(argc == 1)
+        printInputInstructions(MAX_STRING_LENGTH);
+        
     handleInput(argc, argv, &RunSingleConTest);
 
     return 0;
-}
-
-void printInstructions()
-{
-    printf("Hello!\nTo run the automatic tests run again with the names of files you wish to run.\n");
-    printf("Number of tests is according to number of text files in folder.\n");
-    printf("If you wish to enter a manual test start the program without parameters\n");
-    printf("and enter your string. The SW will check maximum %d chars from the string.\n", MAX_STRING_LENGTH);
-    printf("The %d char and on will be ignored.\n\n", MAX_STRING_LENGTH + 1);
 }
 
 void RunSingleConTest(FILE* input)

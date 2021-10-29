@@ -1,19 +1,8 @@
 #include <stdio.h>  /* printf */
 #include <stdlib.h> /* free */
+
+#include "tester.h"
 #include "stack.h"
-
-typedef enum
-{
-    FAIL,
-    PASS
-} EStatus;
-
-typedef struct
-{
-    int test_num;
-    int num_pass;
-    int num_fail;
-} StatusType;
 
 void TestStackCreate(StatusType*);
 void TestPush(StatusType*);
@@ -21,20 +10,15 @@ void TestPeek(StatusType*);
 void TestIsEmpty(StatusType*);
 void TestPop(StatusType*);
 
-void PrepareForTest(char *desc, StatusType* status);
-void CheckResult(int condition, int line_of_failure, StatusType* status);
-void PrintSummary(StatusType* status);
+TestFunction tests[] = {&TestStackCreate, &TestPush, &TestPeek, &TestIsEmpty, &TestPop};
 
 int main()
 {
     StatusType status = {0, 0, 0};
-    TestStackCreate(&status);
-    TestPush(&status);
-    TestPeek(&status);
-    TestIsEmpty(&status);
-    TestPop(&status);
-
+    
+    RunTests(tests, &status, sizeof(tests) / sizeof(TestFunction));
     PrintSummary(&status);
+
     return 0;
 }
 
@@ -138,6 +122,10 @@ void TestIsEmpty(StatusType* status)
     s = StackCreate(num_items, item_size);
     CheckResult(StackIsEmpty(s), __LINE__, status);
 
+    PrepareForTest("Peek when stack is empty", status);
+    StackPeek(s, &item);
+    CheckResult(item == '}', __LINE__, status);
+
     PrepareForTest("Not empty after push", status);
     StackPush(s, &item);
     CheckResult(!StackIsEmpty(s), __LINE__, status);
@@ -164,37 +152,8 @@ void TestPop(StatusType* status)
     }
     else
     {
-        CheckResult(FAIL, __LINE__, status);
+        CheckResult(TEST_FAIL, __LINE__, status);
     }
 
     StackDestroy(s);
 }
-
-void PrepareForTest(char *desc, StatusType* status)
-{
-    printf("test number %d:\n", ++status->test_num);
-    printf("    %s  \n", desc);
-}
-
-void CheckResult(int condition, int line_of_failure, StatusType* status)
-{
-    if(condition)
-    {
-        printf("Test PASS!!\n\n");
-        ++status->num_pass;
-    }
-    else
-    {
-        printf("Test FAIL at %d :(\n\n", line_of_failure);
-        ++status->num_fail;
-    }
-}
-
-void PrintSummary(StatusType* status)
-{
-    printf("\n\n    SUMMARY:\n\n");
-    printf("Num of tests pass: %d\\%d\n", status->num_pass, status->test_num);
-    printf("Num of tests fail: %d\\%d\n", status->num_fail, status->test_num);
-    printf("fin.\n");
-}
-

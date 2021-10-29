@@ -5,7 +5,7 @@
 #include "stack.h"
 
 #define STACK_EMPTY -1
-#define STACK_LOG(msg_string) (printf("\n\nSTACK DEBUG: %s, %s, %d\n\n", msg_string, __FILE__, __LINE__))
+#define STACK_LOG(msg_string) (printf("\n\nSTACK DEBUG: %s, %s, line: %d\n\n", msg_string, __FILE__, __LINE__))
 
 Stack *StackCreate(int num_of_items, int item_size)
 {
@@ -59,7 +59,6 @@ void StackPush(Stack *stack, void *input)
     {
         if((stack->top_index + 1) < stack->stack_size)
         {
-            STACK_LOG("push is copy!");
             ++stack->top_index;
             memcpy(&(((char*)stack->stack)[stack->top_index * stack->var_size]), input, stack->var_size);
         }
@@ -80,7 +79,6 @@ void StackPeek(Stack *stack, void *output)
     {
         if(stack->top_index >= 0) /* when stack is empty, top index is -1 */
         {
-            STACK_LOG("top is copy!");
             memcpy(output, &((char*)stack->stack)[stack->top_index * stack->var_size], stack->var_size);
         }
         else

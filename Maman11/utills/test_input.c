@@ -1,6 +1,15 @@
 #include <stdio.h>
 #include "test_input.h"
 
+void printInputInstructions(int maxInputLength)
+{
+    printf("To run the automatic tests run again with the names of files you wish to run.\n");
+    printf("If the files are in a different folder - add path.\n");
+    printf("If you wish to enter a manual test start the program without parameters\n");
+    printf("and enter your string. The SW will check maximum %d chars from the string.\n", maxInputLength);
+    printf("The %d char and on will be ignored.\n\n", maxInputLength + 1);
+}
+
 void handleInput(int argc, char *argv[], InputTestFunc single_test_func)
 {
     FILE *file = stdin;
