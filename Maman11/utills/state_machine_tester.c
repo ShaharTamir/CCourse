@@ -4,6 +4,8 @@
 #include "tester.h"
 #include "state_machine.h"
 
+#define TEST_MACHINE_NUM_CYCLES 3
+
 enum ETestMachineStates
 {
     START_STATE,
@@ -14,24 +16,23 @@ enum ETestMachineStates
 };
 
 /* test state machine */
-int StartStateHandler(StateMachineType* , StateMachineData* );
-int State_AtoB_Handler(StateMachineType* , StateMachineData* );
-int State_BtoC_Handler(StateMachineType* , StateMachineData* );
-int State_CtoEnd_Handler(StateMachineType* , StateMachineData* );
+int StartStateHandler(StateMachineData*);
+int State_A_Handler(StateMachineData*);
+int State_B_Handler(StateMachineData*);
+int State_C_Handler(StateMachineData*);
 
 
 /* tester function - # actual tests */
-void TestCreateMachine(StatusType *status);
-void TestDestroyMachine(StatusType *status);
-void TestPackData(StatusType *status);
-void TestAddState(StatusType *status);
-void TestStateMachineRun(StatusType *status);
+void TestCreateMachine(TestStatusType *status);
+void TestDestroyMachine(TestStatusType *status);
+void TestAddState(TestStatusType *status);
+void TestStateMachineRun(TestStatusType *status);
 
-TestFunction tests[] = {&TestCreateMachine, &TestDestroyMachine, &TestPackData, &TestAddState, &TestStateMachineRun};
+TestFunction tests[] = {TestCreateMachine, TestDestroyMachine, TestAddState, TestStateMachineRun};
 
 int main()
 {
-    StatusType s ={0, 0, 0};
+    TestStatusType s ={0, 0, 0};
 
     RunTests(tests, &s, sizeof(tests) / sizeof(TestFunction));
     PrintSummary(&s);
@@ -43,33 +44,65 @@ int main()
  *    TEST MACHINE   * 
  ********************/
 
-int StartStateHandler(StateMachineType *m, StateMachineData *data)
+int StartStateHandler(StateMachineData *data)
 {
-    
+    if(*(char*)data->val == '}')
+    {
+        *(ETestStatus*)data->return_val = TEST_PASS;
+        return STATE_B;
+    }
+    if(*(char*)data->val == '{')
+    {
+        return STATE_A;
+    }
 
-    return 0;
+    *(ETestStatus*)data->return_val = TEST_FAIL;
+    return STATE_MACHINE_END_STATE;
 }
 
-int State_AtoB_Handler(StateMachineType* m, StateMachineData *data)
+int State_A_Handler(StateMachineData *data)
 {
-    return 0;
+    *(char*)data->val = 'A';
+
+    printf("Currently in state A\n");
+    ++*(int *)data->params;
+
+    return STATE_B;
 }
 
-int State_BtoC_Handler(StateMachineType *m, StateMachineData *data)
+int State_B_Handler(StateMachineData *data)
 {
-    return 0;
+    printf("Currently in state B\n");
+    if(*(char *)data->val == 'A')
+    {
+        return STATE_C;
+    }
+    else if(*(char *)data->val == 'C')
+    {
+        return STATE_A;
+    }
+
+    return STATE_MACHINE_END_STATE;
 }
 
-int State_CtoEnd_Handler(StateMachineType *m, StateMachineData *data)
+int State_C_Handler(StateMachineData *data)
 {
-    return 0;
+    *(char *)data->val = 'C';
+    printf("Currently in state C\n");
+    if(*(int*)data->params == TEST_MACHINE_NUM_CYCLES)
+    {
+        *(ETestStatus*)data->return_val = TEST_PASS;
+        return STATE_MACHINE_END_STATE;
+    }
+
+    return STATE_B;
 }
 
 /*********************
  *     ALL TESTS     * 
  ********************/
 
-void TestCreateMachine(StatusType *status)
+void TestCreateMachine(TestStatusType *status)
 {
     StateMachineType *m = NULL;
 
@@ -103,7 +136,7 @@ void TestCreateMachine(StatusType *status)
     DestroyStateMachine(m);
 }
 
-void TestDestroyMachine(StatusType *status)
+void TestDestroyMachine(TestStatusType *status)
 {
     StateMachineType *m = NULL;
 
@@ -122,48 +155,67 @@ void TestDestroyMachine(StatusType *status)
     }
 }
 
-void TestPackData(StatusType *status)
-{
-    StateMachineData* d = NULL;
-    char val = '{';
-    int params = 6;
-    float ret_val = 1.5f;
-
-    PrintTestSubject("DATA PACKAGE");
-
-    PrepareForTest("Create a package", status);
-    d = CreateStateMachineData(&val, &params, &ret_val);
-    CheckResult(NULL != d, __LINE__, status);
-
-    PrepareForTest("Verify package data", status);
-    CheckResult(*(char*)d->val == val && *(int*)d->params == params &&
-                 *(float*)d->return_val == ret_val, __LINE__, status);
-
-    PrepareForTest("Destroy package and verify NULL", status);
-    DestroyStateMachineData(d);
-    CheckResult(NULL == d->val, __LINE__, status);
-}
-
-void TestAddState(StatusType *status)
+void TestAddState(TestStatusType *status)
 {
     StateMachineType *m = NULL;
+    StateMachineData d = {NULL, NULL, NULL};
+    char val = '}';
+    ETestStatus ret_val = TEST_FAIL;
 
     PrintTestSubject("ADD STATES");
+    
     PrepareForTest("Add valid state and check return val", status);
     m = CreateStateMachine(START_STATE, NUM_STATES);
-
+    
     if(m)
     {
-         /*AddStateMachine(m, START_STATE, );*/
+        CheckResult(STATE_MACHINE_OK == AddStateMachine(m, START_STATE, StartStateHandler), __LINE__, status);
     }
     else
     {
         CheckResult(TEST_FAIL, __LINE__, status);
     }
+
+    PrepareForTest("Run the state handler and check state returned", status);
+    d.val = &val;
+    d.return_val = &ret_val;
+    CheckResult(STATE_B == m->states[START_STATE](&d), __LINE__, status);
     
+    PrepareForTest("Verify handler data return value", status);
+    CheckResult(TEST_PASS == ret_val, __LINE__, status);
+
+    PrepareForTest("Change val and verify handler returns state end", status);
+    val = '0';
+    CheckResult(STATE_MACHINE_END_STATE == m->states[START_STATE](&d), __LINE__, status);
+
+    PrepareForTest("Verify handler data return value", status);
+    CheckResult(TEST_FAIL == ret_val, __LINE__, status);
 }
 
-void TestStateMachineRun(StatusType *status)
+void TestStateMachineRun(TestStatusType *status)
 {
+    StateMachineType *m = NULL;
+    StateMachineData d = {NULL, NULL, NULL};
+    char val = '{';
+    int cycles = 0;
+    ETestStatus ret_val = TEST_FAIL;
 
+    PrepareForTest("Test full machine run status is success", status);
+    m = CreateStateMachine(START_STATE, NUM_STATES);
+    d.val = &val;
+    d.params = &cycles;
+    d.return_val = &ret_val;
+
+    AddStateMachine(m, START_STATE, StartStateHandler);
+    AddStateMachine(m, STATE_A, State_A_Handler);
+    AddStateMachine(m, STATE_B, State_B_Handler);
+    AddStateMachine(m, STATE_C, State_C_Handler);
+
+    CheckResult(STATE_MACHINE_OK == RunStateMachine(m, &d), __LINE__, status);
+
+    PrepareForTest("Verify handler data return value", status);
+    CheckResult(TEST_PASS == ret_val, __LINE__, status);
+
+    PrepareForTest("Verify handler data params", status);
+    CheckResult(TEST_MACHINE_NUM_CYCLES == cycles, __LINE__, status);
 }

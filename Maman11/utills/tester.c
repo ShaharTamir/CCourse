@@ -1,7 +1,7 @@
 #include <stdio.h>  /* printf */
 #include "tester.h"
 
-void RunTests(TestFunction *tests, StatusType* status, int num_of_tests)
+void RunTests(TestFunction *tests, TestStatusType* status, int num_of_tests)
 {
     int i = 0;
 
@@ -18,13 +18,13 @@ void PrintTestSubject(char *subject)
     printf("*******************************************\n\n");
 }
 
-void PrepareForTest(char *desc, StatusType* status)
+void PrepareForTest(char *desc, TestStatusType* status)
 {
     printf("test number %d:\n", ++status->test_num);
     printf("    %s  \n", desc);
 }
 
-void CheckResult(int condition, int line_of_failure, StatusType* status)
+void CheckResult(int condition, int line_of_failure, TestStatusType* status)
 {
     if(condition)
     {
@@ -38,7 +38,7 @@ void CheckResult(int condition, int line_of_failure, StatusType* status)
     }
 }
 
-void PrintSummary(StatusType* status)
+void PrintSummary(TestStatusType* status)
 {
     printf("\n\n    SUMMARY:\n\n");
     printf("Num of tests pass: %d\\%d\n", status->num_pass, status->test_num);

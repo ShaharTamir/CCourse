@@ -5,25 +5,25 @@ typedef enum
 {
     TEST_FAIL,
     TEST_PASS
-} EStatus;
+} ETestStatus;
 
 typedef struct
 {
     int test_num;
     int num_pass;
     int num_fail;
-} StatusType;
+} TestStatusType;
 
-typedef void (*TestFunction)(StatusType*);
+typedef void (*TestFunction)(TestStatusType*);
 
-void RunTests(TestFunction *tests, StatusType* status, int num_of_tests);
+void RunTests(TestFunction *tests, TestStatusType* status, int num_of_tests);
 
 void PrintTestSubject(char *test_subject);
 
-void PrepareForTest(char *test_description, StatusType* status);
+void PrepareForTest(char *test_description, TestStatusType* status);
 
-void CheckResult(int condition, int line_of_failure, StatusType* status);
+void CheckResult(int condition, int line_of_failure, TestStatusType* status);
 
-void PrintSummary(StatusType* status);
+void PrintSummary(TestStatusType* status);
 
 #endif /* __TESTER_H__ */

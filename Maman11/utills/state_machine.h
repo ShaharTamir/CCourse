@@ -32,13 +32,8 @@ StateMachineType *CreateStateMachine(int starting_state, int num_states);
 
 void DestroyStateMachine(StateMachineType *machine);
 
-StateMachineData *CreateStateMachineData(void *val, size_t val_size, 
-    void *params, size_t params_size, void *ret_val, size_t ret_val_size);
+int AddStateMachine(StateMachineType *machine, int state_index, StateHandler handlerFunction);
 
-void DestroyStateMachineData(StateMachineData* package);
-
-int AddStateMachine(StateMachineType *machine, int state_index, StateHandler *handlerFunction);
-
-void *RunStateMachine(StateMachineType *machine, StateMachineData* data);
+int RunStateMachine(StateMachineType *machine, StateMachineData* data);
 
 #endif /* __STATE_MACHINE_H__ */

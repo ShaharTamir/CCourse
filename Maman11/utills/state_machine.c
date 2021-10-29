@@ -45,81 +45,7 @@ void DestroyStateMachine(StateMachineType *machine)
     }
 }
 
-StateMachineData *CreateStateMachineData(void *val, size_t val_size, 
-    void *params, size_t params_size, void *ret_val, size_t ret_val_size)
-{
-    StateMachineData *package = NULL;
-
-    package = (StateMachineData*) malloc(sizeof(StateMachineData));
-
-    if(package)
-    {
-        if(val_size > 0)
-        {
-            package->val = malloc(val_size);
-            if(!package->val)
-            {
-                DestroyStateMachineData(package);
-                return NULL;
-            }
-            
-            memcpy(package->val, val, val_size);
-        }
-        if(params_size > 0)
-        {
-            package->params = malloc(params_size);
-
-            if(!package->val)
-            {
-                DestroyStateMachineData(package);
-                return NULL;
-            }
-
-            memcpy(package->params, params, params_size);
-        }
-        if(ret_val_size > 0)
-        {
-            package->return_val = malloc(ret_val_size);
-
-            if(!package->val)
-            {
-                DestroyStateMachineData(package);
-                return NULL;
-            }
-
-            memcpy(package->return_val, ret_val, ret_val_size);
-        }
-    }
-    
-    return package;
-}
-
-void DestroyStateMachineData(StateMachineData *package)
-{
-    if(package)
-    {
-        if(package->val)
-        {
-            free(package->val);
-            package->val = NULL;
-        }
-        if(package->params)
-        {
-            free(package->params);
-            package->params = NULL;
-        }
-        if(package->return_val)
-        {
-            free(package->return_val);
-            package->return_val = NULL;
-        }
-        
-        free(package);
-        package = NULL;
-    }
-}
-
-int AddStateMachine(StateMachineType *machine, int state_index, StateHandler *handlerFunction)
+int AddStateMachine(StateMachineType *machine, int state_index, StateHandler handlerFunction)
 {
     int retVal = STATE_MACHINE_FAIL; /* assume fail */
 
@@ -127,7 +53,7 @@ int AddStateMachine(StateMachineType *machine, int state_index, StateHandler *ha
     {
         if(state_index < machine->num_states && state_index >= 0)
         {
-            machine->states[state_index] = *handlerFunction;
+            machine->states[state_index] = handlerFunction;
             retVal = STATE_MACHINE_OK;
         }
     }
@@ -135,7 +61,7 @@ int AddStateMachine(StateMachineType *machine, int state_index, StateHandler *ha
     return retVal;
 }
 
-void *RunStateMachine(StateMachineType *machine, StateMachineData* data)
+int RunStateMachine(StateMachineType *machine, StateMachineData* data)
 {
     /* data doesn't have to be transferred */
     if(machine)
@@ -145,8 +71,8 @@ void *RunStateMachine(StateMachineType *machine, StateMachineData* data)
             machine->current_state = machine->states[machine->current_state](data);
         }
 
-        return data->return_val;
+        return STATE_MACHINE_OK;
     }
 
-    return NULL;
+    return STATE_MACHINE_FAIL;
 }

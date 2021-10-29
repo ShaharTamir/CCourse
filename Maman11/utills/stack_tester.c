@@ -4,17 +4,17 @@
 #include "tester.h"
 #include "stack.h"
 
-void TestStackCreate(StatusType*);
-void TestPush(StatusType*);
-void TestPeek(StatusType*);
-void TestIsEmpty(StatusType*);
-void TestPop(StatusType*);
+void TestStackCreate(TestStatusType*);
+void TestPush(TestStatusType*);
+void TestPeek(TestStatusType*);
+void TestIsEmpty(TestStatusType*);
+void TestPop(TestStatusType*);
 
-TestFunction tests[] = {&TestStackCreate, &TestPush, &TestPeek, &TestIsEmpty, &TestPop};
+TestFunction tests[] = {TestStackCreate, TestPush, TestPeek, TestIsEmpty, TestPop};
 
 int main()
 {
-    StatusType status = {0, 0, 0};
+    TestStatusType status = {0, 0, 0};
     
     RunTests(tests, &status, sizeof(tests) / sizeof(TestFunction));
     PrintSummary(&status);
@@ -22,7 +22,7 @@ int main()
     return 0;
 }
 
-void TestStackCreate(StatusType* status)
+void TestStackCreate(TestStatusType* status)
 {
     Stack* s = NULL;
     int valid_var_size = 1;
@@ -53,7 +53,7 @@ void TestStackCreate(StatusType* status)
     StackDestroy(s);
 }
 
-void TestPush(StatusType* status)
+void TestPush(TestStatusType* status)
 {
     Stack* s = NULL;
     int num_items = 50;
@@ -73,7 +73,7 @@ void TestPush(StatusType* status)
     StackDestroy(s);
 }
 
-void TestPeek(StatusType* status)
+void TestPeek(TestStatusType* status)
 {
     Stack* s = NULL;
     int num_items = 50;
@@ -108,7 +108,7 @@ void TestPeek(StatusType* status)
     StackDestroy(s);
 }
 
-void TestIsEmpty(StatusType* status)
+void TestIsEmpty(TestStatusType* status)
 {
     Stack* s = NULL;
     int num_items = 50;
@@ -133,7 +133,7 @@ void TestIsEmpty(StatusType* status)
     StackDestroy(s);
 }
 
-void TestPop(StatusType* status)
+void TestPop(TestStatusType* status)
 {
     Stack* s = NULL;
     int num_items = 50;
