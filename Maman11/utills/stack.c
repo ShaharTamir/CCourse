@@ -116,6 +116,14 @@ void StackPop(Stack *stack, void *output)
     }
 }
 
+void StackEmptyStack(Stack *stack)
+{
+    if(stack)
+    {
+        stack->top_index = STACK_EMPTY;
+    }
+}
+
 int StackGetIndex(Stack *s)
 {
     if(s)

@@ -21,7 +21,6 @@ int State_A_Handler(StateMachineData*);
 int State_B_Handler(StateMachineData*);
 int State_C_Handler(StateMachineData*);
 
-
 /* tester function - # actual tests */
 void TestCreateMachine(TestStatusType *status);
 void TestDestroyMachine(TestStatusType *status);

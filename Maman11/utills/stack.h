@@ -17,11 +17,13 @@ void StackPush(Stack *stack, void *input);
 
 void StackPeek(Stack *stack, void *output);
 
+int StackIsEmpty(Stack *stack);
+
 void StackPop(Stack *stack, void *output);
 
-int StackIsEmpty(Stack* stack);
+void StackEmptyStack(Stack *stack);
 
-int StackGetIndex(Stack* stack);
+int StackGetIndex(Stack *stack);
 
 /*int StackSize(Stack* stack);*/
 
