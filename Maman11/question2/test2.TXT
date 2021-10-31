@@ -1,0 +1,11 @@
+this is a balanced text:
+if(text is not balanced)
+{
+	print("text is not balanced");
+}
+else
+{
+	/* test this: {{}}}}}}{{{{{{{}*/
+	and that: {{(([[[]]]))}}{}[]()/*(}*/
+}
+yes!

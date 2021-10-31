@@ -291,17 +291,74 @@ int HandleCloseParenthes(StateMachineData* data)
 
 int HandleTxtChar(StateMachineData* data)
 {
-    return 0;
+    SParserParams *params;
+    char stack_top = 0;
+    char output = 0;
+
+    params = data->params;
+
+    if(!StackIsEmpty(params->doc_stack))
+    {
+        StackPeek(params->doc_stack, &stack_top);
+        if('"' == stack_top) /* reached end of "string". clean from stack */
+        {
+            StackPop(params->doc_stack, &output);
+        }
+        else if('*' != stack_top) /* if not in a note */
+        {
+            StackPush(params->doc_stack, data->val);
+        }
+    }
+    else
+    {
+        StackPush(params->doc_stack, data->val);
+    }
+
+    return PARSE_LINE;
 }
 
 int HandleOpenNote(StateMachineData* data)
 {
-    return 0;
+    SParserParams *params;
+    char stack_top = 0;
+    params = data->params;
+
+    if(!StackIsEmpty(params->doc_stack))
+    {
+        StackPeek(params->doc_stack, &stack_top);
+
+        if(stack_top != '"' && params->line[params->line_index] == '*')
+        {
+            StackPush(params->doc_stack, &params->line[params->line_index]);
+            ++params->line_index;
+        }
+    }
+
+    return PARSE_LINE;
 }   
 
 int HandleCloseNote(StateMachineData* data)
 {
-    return 0;
+    SParserParams *params;
+    char stack_top = 0;
+    char output = 0;
+
+    params = data->params;
+
+    if(!StackIsEmpty(params->doc_stack))
+    {
+        if(params->line[params->line_index] == '/') /* possible reach to end on note */
+        {
+            StackPeek(params->doc_stack, &stack_top);
+            if(stack_top == '*') /* note was open previously in txt - close it. */
+            {
+                StackPop(params->doc_stack, &output);
+            }
+            ++params->line_index;
+        }
+    }
+
+    return PARSE_LINE;
 }
 
 int PrintIsTextBalanced(StateMachineData* data)
@@ -335,7 +392,7 @@ int isParenthesMatch(char stackTop, char newInput)
         case '{':
             return '}' == newInput;
         default:
-            printf("no match\n");
+            /*printf("no match\n");*/
             return 0;
     }
 }
