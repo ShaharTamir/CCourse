@@ -4,6 +4,14 @@
 #include "tester.h"
 #include "stack.h"
 
+struct _Stack
+{
+    int stack_size;
+    int top_index;
+    int var_size;
+    void *stack;
+};
+
 void TestStackCreate(TestStatusType*);
 void TestPush(TestStatusType*);
 void TestPeek(TestStatusType*);
@@ -57,6 +65,7 @@ void TestPush(TestStatusType* status)
 {
     Stack* s = NULL;
     int num_items = 50;
+    int num_small_items = 2;
     int item_size = 1;
     char item = 0;
 
@@ -64,11 +73,18 @@ void TestPush(TestStatusType* status)
     PrepareForTest("Test a push by top index update", status);
     item = '{';
     StackPush(s, (void*)&item);
-    CheckResult(s->top_index == 0, __LINE__, status);
+    CheckResult(StackGetIndex(s) == 1, __LINE__, status);
 
     PrepareForTest("Next Push", status);
     StackPush(s, (void*)&item);
-    CheckResult(s->top_index == 1, __LINE__, status);
+    CheckResult(StackGetIndex(s) == 2, __LINE__, status);
+
+    StackDestroy(s);
+
+    s = StackCreate(num_small_items, item_size);
+    PrepareForTest("Test resizing the stack", status);
+    StackPush(s, (void*)&item);
+    CheckResult(s->stack_size == num_small_items * 2, __LINE__, status);
 
     StackDestroy(s);
 }
@@ -103,7 +119,7 @@ void TestPeek(TestStatusType* status)
     StackPeek(s, &output);
     CheckResult(special_top == output, __LINE__, status);
     PrepareForTest("Top index is stack size", status);
-    CheckResult(s->top_index + 1 == s->stack_size, __LINE__, status);
+    CheckResult(StackGetIndex(s) + 1 == s->stack_size, __LINE__, status);
 
     StackDestroy(s);
 }

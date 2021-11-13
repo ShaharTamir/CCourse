@@ -1,11 +1,24 @@
 #include <stdio.h>  /* printf */
 #include <string.h> /* memcpy, memset */
-#include <stdlib.h> /* malloc, free */
+#include <stdlib.h> /* malloc, free, realloc */
 
 #include "stack.h"
 
-#define STACK_EMPTY -1
 #define STACK_LOG(msg_string) (printf("\n\nSTACK DEBUG: %s, %s, line: %d\n\n", msg_string, __FILE__, __LINE__))
+
+#define STACK_EMPTY -1
+#define MIN_STACK_SIZE 10
+#define MIN_DIFF_TO_RESIZE 5
+
+struct _Stack
+{
+    int stack_size;
+    int top_index;
+    int var_size;
+    void *stack;
+};
+
+static void StackResize(Stack* stack, int new_size);
 
 Stack *StackCreate(int num_of_items, int item_size)
 {
@@ -38,7 +51,7 @@ Stack *StackCreate(int num_of_items, int item_size)
     }
 
     new_stack->stack_size = num_of_items;
-    new_stack->top_index = -1;
+    new_stack->top_index = STACK_EMPTY;
     new_stack->var_size = item_size;
 
     return new_stack;
@@ -57,7 +70,12 @@ void StackPush(Stack *stack, void *input)
 {
     if(NULL != stack && NULL != input)
     {
-        if((stack->top_index + 1) < stack->stack_size)
+        if(stack->top_index + MIN_DIFF_TO_RESIZE >= stack->stack_size)
+        {
+            StackResize(stack, stack->stack_size * 2);
+        }
+
+        if((stack->top_index + 1) < stack->stack_size) /* stack index starts from 0. size starts from 1 */
         {
             ++stack->top_index;
             memcpy(&(((char*)stack->stack)[stack->top_index * stack->var_size]), input, stack->var_size);
@@ -99,6 +117,9 @@ int StackIsEmpty(Stack *stack)
 
 void StackPop(Stack *stack, void *output)
 {
+    int resize_condition = 0;
+    int half_size = 0;
+
     if(NULL == output)
     {
         STACK_LOG("output is null!");
@@ -108,11 +129,19 @@ void StackPop(Stack *stack, void *output)
     if(!StackIsEmpty(stack))
     {
         memcpy(output, &((char*)stack->stack)[stack->top_index * stack->var_size], stack->var_size);
-            --stack->top_index;
+        --stack->top_index;
     }
     else
     {
         STACK_LOG("stack is empty!");
+    }
+
+    half_size = stack->stack_size / 2;
+    resize_condition = half_size - MIN_DIFF_TO_RESIZE;
+
+    if(resize_condition >= MIN_STACK_SIZE && stack->top_index + 1 <= resize_condition)
+    {
+        StackResize(stack, half_size);
     }
 }
 
@@ -131,5 +160,38 @@ int StackGetIndex(Stack *s)
         return s->top_index + 1;
     }
 
-    return -1;
+    return STACK_EMPTY;
+}
+
+void StackResize(Stack* stack, int new_size)
+{
+    void *resized_stack = NULL;
+
+    if(new_size > stack->stack_size)
+        resized_stack = realloc(stack->stack, stack->var_size * new_size);
+    else
+        resized_stack = malloc(stack->var_size * new_size);
+    
+    if(resized_stack != NULL)
+    {
+        if(new_size < stack->stack_size)
+        {
+            memcpy(resized_stack, stack->stack, stack->var_size * new_size);
+            free(stack->stack);
+            stack->stack = NULL;
+        }
+
+        stack->stack = resized_stack;
+        stack->stack_size = new_size;
+
+        if(stack->top_index >= stack->stack_size)
+        {
+            STACK_LOG("index is out of bound! ABORT!");
+            exit(-1);
+        }
+    }
+    else
+    {
+        STACK_LOG("no more memory to realloc! stack is complitly full!!");
+    }
 }
