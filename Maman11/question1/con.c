@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "..\utills\test_input.h"
+#include "../utills/test_input.h"
 
 #define MAX_STRING_LENGTH 80
 #define MIN_ROW 1

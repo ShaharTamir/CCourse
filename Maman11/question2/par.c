@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "..\utills\test_input.h"
-#include "..\utills\stack.h"
-#include "..\utills\state_machine.h"
+#include "../utills/test_input.h"
+#include "../utills/stack.h"
+#include "../utills/state_machine.h"
 
 #define MAX_LINE_INPUT 100
 #define STACK_LIMIT 1000
@@ -327,11 +327,16 @@ int HandleOpenNote(StateMachineData* data)
     {
         StackPeek(params->doc_stack, &stack_top);
 
-        if(stack_top != '"' && params->line[params->line_index] == '*')
+        if(stack_top == '"') /* means currently in a string. do not parse as note. */
         {
-            StackPush(params->doc_stack, &params->line[params->line_index]);
-            ++params->line_index;
+          return PARSE_LINE;
         }
+    }
+	
+    if(params->line[params->line_index] == '*')
+    {
+      StackPush(params->doc_stack, &params->line[params->line_index]);
+      ++params->line_index;
     }
 
     return PARSE_LINE;
@@ -365,8 +370,6 @@ int PrintIsTextBalanced(StateMachineData* data)
 {   
     SParserParams *parser_data;
     parser_data = (SParserParams *)data->params;
-
-    /*PrintLineReport(parser_data->line, StackIsEmpty(parser_data->line_stack));*/
     
     printf("\n\n****** SUMMARY ******\n\n");
     printf("The input is ");
@@ -392,7 +395,6 @@ int isParenthesMatch(char stackTop, char newInput)
         case '{':
             return '}' == newInput;
         default:
-            /*printf("no match\n");*/
             return 0;
     }
 }
