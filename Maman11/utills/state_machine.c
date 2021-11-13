@@ -2,7 +2,14 @@
 #include <string.h> /* memset */
 #include "state_machine.h"
 
-StateMachineType *CreateStateMachine(int starting_state, int num_states)
+struct _StateMachineType
+{
+    int num_states;
+    int current_state;
+    StateHandler *states;
+};
+
+StateMachineType *StateMachineCreate(int starting_state, int num_states)
 {
     StateMachineType *m = NULL;
 
@@ -21,7 +28,7 @@ StateMachineType *CreateStateMachine(int starting_state, int num_states)
 
         if(!m->states)
         {
-            DestroyStateMachine(m);
+            StateMachineDestroy(m);
             m = NULL;
         }
     }
@@ -29,7 +36,7 @@ StateMachineType *CreateStateMachine(int starting_state, int num_states)
     return m;
 }
 
-void DestroyStateMachine(StateMachineType *machine)
+void StateMachineDestroy(StateMachineType *machine)
 {
     if(machine)
     {
@@ -45,15 +52,15 @@ void DestroyStateMachine(StateMachineType *machine)
     }
 }
 
-int AddStateMachine(StateMachineType *machine, int state_index, StateHandler handlerFunction)
+int StateMachineAddState(StateMachineType *machine, int state_index, StateHandler handler_function)
 {
     int retVal = STATE_MACHINE_FAIL; /* assume fail */
 
-    if(machine && handlerFunction)
+    if(machine && handler_function)
     {
         if(state_index < machine->num_states && state_index >= 0)
         {
-            machine->states[state_index] = handlerFunction;
+            machine->states[state_index] = handler_function;
             retVal = STATE_MACHINE_OK;
         }
     }
@@ -61,7 +68,7 @@ int AddStateMachine(StateMachineType *machine, int state_index, StateHandler han
     return retVal;
 }
 
-int RunStateMachine(StateMachineType *machine, StateMachineData* data)
+int StateMachineRun(StateMachineType *machine, StateMachineData* data)
 {
     /* data doesn't have to be transferred */
     if(machine)

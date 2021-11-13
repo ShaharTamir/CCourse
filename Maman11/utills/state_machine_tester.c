@@ -15,6 +15,13 @@ enum ETestMachineStates
     NUM_STATES
 };
 
+struct _StateMachineType
+{
+    int num_states;
+    int current_state;
+    StateHandler *states;
+};
+
 /* test state machine */
 int StartStateHandler(StateMachineData*);
 int State_A_Handler(StateMachineData*);
@@ -108,19 +115,19 @@ void TestCreateMachine(TestStatusType *status)
     PrintTestSubject("CREATE MACHINE");
 
     PrepareForTest("Cerate a machine start state bigger that num states", status);
-    m = CreateStateMachine(10, NUM_STATES);
+    m = StateMachineCreate(10, NUM_STATES);
     CheckResult(NULL == m, __LINE__, status);
 
     PrepareForTest("Create a machine when num states is 0", status);
-    m = CreateStateMachine(START_STATE, START_STATE);
+    m = StateMachineCreate(START_STATE, START_STATE);
     CheckResult(NULL == m, __LINE__, status);
 
     PrepareForTest("Create a machine when num states is smaller than start state", status);
-    m = CreateStateMachine(STATE_C, STATE_A);
+    m = StateMachineCreate(STATE_C, STATE_A);
     CheckResult(NULL == m, __LINE__, status);
 
     PrepareForTest("Create a machine successfully, check not NULL", status);
-    m = CreateStateMachine(START_STATE, NUM_STATES);
+    m = StateMachineCreate(START_STATE, NUM_STATES);
     CheckResult(NULL != m && NUM_STATES == m->num_states && START_STATE == m->current_state, __LINE__, status);
 
     PrepareForTest("Verify num states", status);
@@ -132,7 +139,7 @@ void TestCreateMachine(TestStatusType *status)
     PrepareForTest("Verify states array is not NULL", status);
     CheckResult(NULL != m->states, __LINE__, status);
     
-    DestroyStateMachine(m);
+    StateMachineDestroy(m);
 }
 
 void TestDestroyMachine(TestStatusType *status)
@@ -141,11 +148,11 @@ void TestDestroyMachine(TestStatusType *status)
 
     PrintTestSubject("DESTSROY MACHINE");
     PrepareForTest("Create and destroy machine Verify states array is NULL", status);
-    m = CreateStateMachine(START_STATE, NUM_STATES);
+    m = StateMachineCreate(START_STATE, NUM_STATES);
     
     if(m && m->states)
     {
-        DestroyStateMachine(m);
+        StateMachineDestroy(m);
         CheckResult(NULL == m->states, __LINE__, status);
     }
     else
@@ -164,11 +171,11 @@ void TestAddState(TestStatusType *status)
     PrintTestSubject("ADD STATES");
     
     PrepareForTest("Add valid state and check return val", status);
-    m = CreateStateMachine(START_STATE, NUM_STATES);
+    m = StateMachineCreate(START_STATE, NUM_STATES);
     
     if(m)
     {
-        CheckResult(STATE_MACHINE_OK == AddStateMachine(m, START_STATE, StartStateHandler), __LINE__, status);
+        CheckResult(STATE_MACHINE_OK == StateMachineAddState(m, START_STATE, StartStateHandler), __LINE__, status);
     }
     else
     {
@@ -200,17 +207,17 @@ void TestStateMachineRun(TestStatusType *status)
     ETestStatus ret_val = TEST_FAIL;
 
     PrepareForTest("Test full machine run status is success", status);
-    m = CreateStateMachine(START_STATE, NUM_STATES);
+    m = StateMachineCreate(START_STATE, NUM_STATES);
     d.val = &val;
     d.params = &cycles;
     d.return_val = &ret_val;
 
-    AddStateMachine(m, START_STATE, StartStateHandler);
-    AddStateMachine(m, STATE_A, State_A_Handler);
-    AddStateMachine(m, STATE_B, State_B_Handler);
-    AddStateMachine(m, STATE_C, State_C_Handler);
+    StateMachineAddState(m, START_STATE, StartStateHandler);
+    StateMachineAddState(m, STATE_A, State_A_Handler);
+    StateMachineAddState(m, STATE_B, State_B_Handler);
+    StateMachineAddState(m, STATE_C, State_C_Handler);
 
-    CheckResult(STATE_MACHINE_OK == RunStateMachine(m, &d), __LINE__, status);
+    CheckResult(STATE_MACHINE_OK == StateMachineRun(m, &d), __LINE__, status);
 
     PrepareForTest("Verify handler data return value", status);
     CheckResult(TEST_PASS == ret_val, __LINE__, status);
