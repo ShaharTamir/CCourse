@@ -109,7 +109,7 @@ void TestPeek(TestStatusType* status)
     PrepareForTest("Filling up the stack - last output", status);
     for(i = 0; i < num_items; ++i)
     {
-        if(i == num_items - 2)
+        if(i == num_items - 1)
             item = special_top;
         else
             item = '{';
@@ -118,8 +118,8 @@ void TestPeek(TestStatusType* status)
 
     StackPeek(s, &output);
     CheckResult(special_top == output, __LINE__, status);
-    PrepareForTest("Top index is stack size", status);
-    CheckResult(StackGetIndex(s) + 1 == s->stack_size, __LINE__, status);
+    PrepareForTest("Top index is not stack size because size increased", status);
+    CheckResult(StackGetIndex(s) + 1 != s->stack_size, __LINE__, status);
 
     StackDestroy(s);
 }
