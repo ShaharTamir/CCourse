@@ -1,0 +1,22 @@
+test for comments and strings when stack is empty
++ start in one line and end in another.
+
+/*{
+*/
+
+{
+}
+
+/*{{{
+]]]]{{{{
+*/
+
+"/*{{}}(*/((("
+"/***/{{{
+}}}}
+"
+
+/*"{{"*/
+/*"*/
+
+The output should be balanced.
