@@ -1,9 +1,9 @@
 LIB = utills.so
 LIB_FOLDER = ../utills/
-FILES = con.c
-OBJECTS = con.o
+FILES = contract.c
+OBJECTS = contract.o
 GCC_FLAGS = -ansi -Wall -pedantic-errors
-PRODUCT = con
+PRODUCT = contract
 
 $(PRODUCT): objects $(OBJECTS)
 	gcc -g $(GCC_FLAGS) $(OBJECTS) -L$(LIB_FOLDER) $(LIB_FOLDER)$(LIB) -o $(PRODUCT)
