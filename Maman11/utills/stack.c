@@ -4,7 +4,8 @@
 
 #include "stack.h"
 
-#define STACK_LOG(msg_string) (printf("\n\nSTACK DEBUG: %s, %s, line: %d\n\n", msg_string, __FILE__, __LINE__))
+#define PRINT_LOG 0
+#define STACK_LOG(msg_string) if(PRINT_LOG){ printf("\n\nSTACK DEBUG: %s, %s, line: %d\n\n", msg_string, __FILE__, __LINE__); }
 
 #define STACK_EMPTY -1
 #define MIN_STACK_SIZE 10

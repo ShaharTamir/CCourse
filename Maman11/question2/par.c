@@ -59,8 +59,6 @@ int isParenthesMatch(char stackTop, char newInput);
 void PrintLineReport(char *line, int isBalanced);
 int PrintIsTextBalanced(StateMachineData* data);
 
-static char g_special_characters[] = {'{', '(', '[', ']', ')', '}', '"', '/', '*', EOF};
-
 int main(int argc, char *argv[])
 {
     printInputInstructions(MAX_LINE_INPUT);
@@ -96,7 +94,8 @@ void RunSingleParTest(FILE* input)
         return;
     }
 
-    StateMachineRun(machine, &machine_data);
+    /* Start running the parser after initiating everything */
+    StateMachineRun(machine, &machine_data); 
 
     StateMachineDestroy(machine);
     StackDestroy(parser_data.doc_stack);
@@ -192,6 +191,7 @@ int ReadLines(StateMachineData* data)
 
 int ParseLines(StateMachineData* data)
 {
+    static char g_special_characters[] = {'{', '(', '[', ']', ')', '}', '"', '/', '*', EOF};
     SParserParams *parser_data = NULL;
     int spec_char_index = 0;
 
@@ -253,18 +253,12 @@ int HandleOpenParenthes(StateMachineData* data)
 
     params = (SParserParams*)data->params;
 
-    if(!StackIsEmpty(params->doc_stack))
+    StackPeek(params->doc_stack, &stack_top);
+    if(stack_top != '"' && stack_top != '*') /* not in note and not in string */
     {
-        StackPeek(params->doc_stack, &stack_top);
-        if(stack_top != '"' && stack_top != '*') /* not in note and not in string */
-        {
+        if('{' == *(char*)data->val)
             StackPush(params->doc_stack, data->val);
-            StackPush(params->line_stack, data->val);
-        }
-    }
-    else
-    {
-        StackPush(params->doc_stack, data->val);
+            
         StackPush(params->line_stack, data->val);
     }
 
@@ -296,8 +290,8 @@ int HandleCloseParenthes(StateMachineData* data)
             else /* parenthes do not match */
             {
                 /* NOTE: here we can actually quit parsing because we know the result. */
-                StackPush(params->doc_stack, data->val); /* reach here once makes the whole doc uneven */
-                StackPush(params->line_stack, data->val); /* if doc is not even, this line is surely uneven */
+                StackPush(params->doc_stack, data->val);
+                StackPush(params->line_stack, data->val);
             }
         } /* else do nothing */
     }
@@ -319,19 +313,12 @@ int HandleTxtChar(StateMachineData* data)
 
     params = data->params;
 
-    if(!StackIsEmpty(params->doc_stack))
+    StackPeek(params->doc_stack, &stack_top);
+    if('"' == stack_top) /* reached end of "string". clean from stack */
     {
-        StackPeek(params->doc_stack, &stack_top);
-        if('"' == stack_top) /* reached end of "string". clean from stack */
-        {
-            StackPop(params->doc_stack, &output);
-        }
-        else if('*' != stack_top) /* if not in a note */
-        {
-            StackPush(params->doc_stack, data->val);
-        }
+        StackPop(params->doc_stack, &output);
     }
-    else
+    else if('*' != stack_top) /* if not in a note */
     {
         StackPush(params->doc_stack, data->val);
     }
@@ -345,14 +332,11 @@ int HandleOpenNote(StateMachineData* data)
     char stack_top = 0;
     params = data->params;
 
-    if(!StackIsEmpty(params->doc_stack))
-    {
-        StackPeek(params->doc_stack, &stack_top);
+    StackPeek(params->doc_stack, &stack_top);
 
-        if(stack_top == '"') /* means currently in a string. do not parse as note. */
-        {
-          return PARSE_LINE;
-        }
+    if(stack_top == '"') /* means currently in a string. do not parse as note. */
+    {
+        return PARSE_LINE;
     }
 	
     if(params->line[params->line_index] == '*')
@@ -372,17 +356,14 @@ int HandleCloseNote(StateMachineData* data)
 
     params = data->params;
 
-    if(!StackIsEmpty(params->doc_stack))
+    if(params->line[params->line_index] == '/') /* possible reach to end on note */
     {
-        if(params->line[params->line_index] == '/') /* possible reach to end on note */
+        StackPeek(params->doc_stack, &stack_top);
+        if(stack_top == '*') /* note was open previously in txt - close it. */
         {
-            StackPeek(params->doc_stack, &stack_top);
-            if(stack_top == '*') /* note was open previously in txt - close it. */
-            {
-                StackPop(params->doc_stack, &output);
-            }
-            ++params->line_index;
+            StackPop(params->doc_stack, &output);
         }
+        ++params->line_index;
     }
 
     return PARSE_LINE;
