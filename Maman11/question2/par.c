@@ -40,6 +40,7 @@ void RunSingleParTest(FILE* input);
 
 /* INIT FUNCTIONS */
 static int CreateAll(StateMachineType** machine, SParserParams* params);
+static void DestroyAll(StateMachineType** machine, SParserParams* parser_data);
 static int InitStatesHandlers(StateMachineType* machine);
 
 /* PARSER FUCNTIONS */
@@ -76,6 +77,8 @@ void RunSingleParTest(FILE* input)
 
     if(PARSER_FAIL == CreateAll(&machine, &parser_data))
     {
+        printf("basic allocation fail. exit.\n");
+        DestroyAll(&machine, &parser_data);
         return;
     }
 
@@ -87,21 +90,15 @@ void RunSingleParTest(FILE* input)
 
     if(STATE_MACHINE_FAIL == InitStatesHandlers(machine))
     {
-        StateMachineDestroy(machine);
-        StackDestroy(parser_data.doc_stack);
-        StackDestroy(parser_data.line_stack);
         printf("add states fail. exit.\n");
+        DestroyAll(&machine, &parser_data);
         return;
     }
 
     /* Start running the parser after initiating everything */
     StateMachineRun(machine, &machine_data); 
-
-    StateMachineDestroy(machine);
-    StackDestroy(parser_data.doc_stack);
-    StackDestroy(parser_data.line_stack);
-    free(parser_data.line);
-    parser_data.line = NULL;
+    
+    DestroyAll(&machine, &parser_data);
 }
 
 /*******************************
@@ -112,39 +109,21 @@ int CreateAll(StateMachineType** machine, SParserParams* parser_data)
     *machine = StateMachineCreate(READ_NEW_LINE, NUM_STATES);
     
     if(*machine == NULL)
-    {
-        printf("malloc fail. exit.\n");
         return PARSER_FAIL;
-    }
     
-    parser_data->doc_stack = StackCreate(STACK_LIMIT, sizeof(char));
+    parser_data->doc_stack = StackCreate(STACK_STARTING_SIZE, sizeof(char));
 
     if(parser_data->doc_stack == NULL)
-    {
-        StateMachineDestroy(*machine);
-        printf("malloc fail. exit.\n");
         return PARSER_FAIL;
-    }
 
-    parser_data->line_stack = StackCreate(MAX_LINE_INPUT, sizeof(char));
+    parser_data->line_stack = StackCreate(STACK_STARTING_SIZE, sizeof(char));
 
     if(parser_data->line_stack == NULL)
-    {
-        StateMachineDestroy(*machine);
-        StackDestroy(parser_data->doc_stack);
-        printf("malloc fail. exit. \n");
         return PARSER_FAIL;
-    }
 
     parser_data->line = (char *) malloc(MAX_LINE_INPUT);
     if(parser_data->line == NULL)
-    {
-        StateMachineDestroy(*machine);
-        StackDestroy(parser_data->doc_stack);
-        StackDestroy(parser_data->line_stack);
-        printf("malloc fail. exit. \n");
         return PARSER_FAIL;
-    }
 
     return PARSER_SUCCESS;
 }
@@ -166,6 +145,20 @@ int InitStatesHandlers(StateMachineType* machine)
     return add_status;
 }
 
+void DestroyAll(StateMachineType** machine, SParserParams* parser_data)
+{
+    if(*machine)
+        StateMachineDestroy(*machine);
+    if(parser_data->doc_stack)
+        StackDestroy(parser_data->doc_stack);
+    if(parser_data->line_stack)
+        StackDestroy(parser_data->line_stack);
+    if(parser_data->line)
+    {
+        free(parser_data->line);
+        parser_data->line = NULL;
+    }
+}
 
 /*************************************
 *          PARSER FUNCTIONS 
