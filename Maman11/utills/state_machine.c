@@ -13,7 +13,7 @@ StateMachineType *StateMachineCreate(int starting_state, int num_states)
 {
     StateMachineType *m = NULL;
 
-    if(starting_state >= 0 || num_states > 0 || starting_state < num_states)
+    if(starting_state >= 0 && num_states > 0 && starting_state < num_states)
     {
         m = (StateMachineType*)malloc(sizeof(StateMachineType));
         

@@ -37,6 +37,7 @@ void TestStackCreate(TestStatusType* status)
     int valid_num_items = 3;
     int exp_stack_size = 3;
 
+    PrintTestSubject("CREATE STACK");
     PrepareForTest("Create invalid items number", status);
     s = StackCreate(0, 1);
     CheckResult((s == NULL), __LINE__, status);
@@ -69,6 +70,7 @@ void TestPush(TestStatusType* status)
     int item_size = 1;
     char item = 0;
 
+    PrintTestSubject("STACK PUSH");
     s = StackCreate(num_items, item_size);
     PrepareForTest("Test a push by top index update", status);
     item = '{';
@@ -99,6 +101,7 @@ void TestPeek(TestStatusType* status)
     char output = 0;
     int i = 0;
 
+    PrintTestSubject("STACK PEEK");
     PrepareForTest("One push and verify top", status);
     s = StackCreate(num_items, item_size);
     item = '{';
@@ -131,6 +134,7 @@ void TestIsEmpty(TestStatusType* status)
     int item_size = 1;
     char item = '}';
 
+    PrintTestSubject("STACK IS EMPTY");
     PrepareForTest("Is empty when stack is NULL", status);
     CheckResult(StackIsEmpty(s), __LINE__, status);
     
@@ -157,6 +161,7 @@ void TestPop(TestStatusType* status)
     char item = '}';
     char output = 0;
 
+    PrintTestSubject("STACK POP");
     PrepareForTest("Push an item, make sure not empty, pop and verify empty", status);
     s = StackCreate(num_items, item_size);
     StackPush(s, &item);

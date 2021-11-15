@@ -46,8 +46,9 @@ StateMachineType *StateMachineCreate(int starting_state, int num_states);
 
 /** 
  * StateMachineDestroy
- * 
  * free all data allocated for the state machine.
+ * 
+ * machine: ptr to machine.
  * 
  * return: NONE.
  */ 
@@ -56,7 +57,7 @@ void StateMachineDestroy(StateMachineType *machine);
 /** 
  * StateMachineAddState
  * 
- * machine:          the machine to add state to.
+ * machine:          ptr to machine.
  * state_index:      must be a non-valid index. state value to assign the handler to.
  * handler_function: function to handle state as described above.
  * 
@@ -67,7 +68,7 @@ int StateMachineAddState(StateMachineType *machine, int state_index, StateHandle
 /**
  * StateMachineRun
  * 
- * machine: the state machine to run
+ * machine: ptr to machine.
  * data:    user data to pass along the handlers and update as he wish. Not a must -
  *          the state machine can also run without data (data == NULL).
  *          Use at your own risk.
