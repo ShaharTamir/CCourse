@@ -13,26 +13,24 @@ StateMachineType *StateMachineCreate(int starting_state, int num_states)
 {
     StateMachineType *m = NULL;
 
-    if(starting_state < 0 || num_states <= 0 || starting_state >= num_states)
+    if(starting_state >= 0 || num_states > 0 || starting_state < num_states)
     {
-        return m;
-    }
-
-    m = (StateMachineType*)malloc(sizeof(StateMachineType));
-    
-    if(m)
-    {
-        m->current_state = starting_state;
-        m->num_states = num_states;
-        m->states = (StateHandler*)malloc(sizeof(StateHandler) * num_states);
-
-        if(!m->states)
+        m = (StateMachineType*)malloc(sizeof(StateMachineType));
+        
+        if(m)
         {
-            StateMachineDestroy(m);
-            m = NULL;
+            m->current_state = starting_state;
+            m->num_states = num_states;
+            m->states = (StateHandler*)malloc(sizeof(StateHandler) * num_states);
+
+            if(!m->states)
+            {
+                StateMachineDestroy(m);
+                m = NULL;
+            }
         }
     }
-
+    
     return m;
 }
 

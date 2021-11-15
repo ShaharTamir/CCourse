@@ -13,9 +13,9 @@ static int IsEnd(char note);
 int main (int argc, char *argv[])
 {
     if(argc == 1)
-        printInputInstructions(MAX_STRING_LENGTH);
+        PrintInputInstructions(MAX_STRING_LENGTH);
         
-    handleInput(argc, argv, &RunSingleConTest);
+    HandleInput(argc, argv, &RunSingleConTest);
 
     return 0;
 }

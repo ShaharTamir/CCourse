@@ -66,8 +66,8 @@ static void PrintLineReport(char *line, int is_balanced);
 
 int main(int argc, char *argv[])
 {
-    printInputInstructions(MAX_LINE_INPUT);
-    handleInput(argc, argv, &RunSingleParTest);
+    PrintInputInstructions(MAX_LINE_INPUT);
+    HandleInput(argc, argv, &RunSingleParTest);
 
     return 0;
 }
