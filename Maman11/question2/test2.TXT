@@ -1,7 +1,8 @@
 this is a balanced text:
-if(text is not balanced)
-{
-	print("text is not balanced");
+if(text is not balanced){
+	{
+		print("text is not balanced");
+	}
 }
 else
 {
