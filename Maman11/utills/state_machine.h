@@ -30,7 +30,7 @@ typedef struct
  */
 typedef int (*StateHandler)(StateMachineData*);
 
-/* encapsulated StateMachineType */
+/* Encapsulated StateMachineType */
 typedef struct _StateMachineType StateMachineType;
 
 /** 
