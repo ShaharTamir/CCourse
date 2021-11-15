@@ -1,0 +1,5 @@
+Test strings:
+"[[[[]]]]]]]]{{{{{{))))))))" 
+"[[[[]]]]]]]]""{{{{{{))))))))"
+[[[[]]]]]]]]{{{{{{))))))))""
+The document should not be balanced because of the last line.
