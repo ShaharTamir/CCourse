@@ -1,13 +1,13 @@
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdio.h> /* printf */
+#include <stdlib.h> /* malloc, free */
 
 #include "../utills/test_input.h"
 #include "../utills/stack.h"
 #include "../utills/state_machine.h"
 
 #define MAX_LINE_INPUT 100
-#define STACK_LIMIT 1000
+#define STACK_STARTING_SIZE 20
 #define PARSER_FAIL -1
 #define PARSER_SUCCESS 0
 
@@ -38,7 +38,7 @@ typedef struct
 } SParserParams;
 
 /* MAIN FUNCTION */
-void RunSingleParTest(FILE* input);
+static void RunSingleParTest(FILE* input);
 
 /* INIT FUNCTIONS */
 static int CreateAll(StateMachineType** machine, SParserParams* params);
@@ -344,16 +344,16 @@ int HandleTxtChar(StateMachineData* data)
 {
     SParserParams *params;
     char stack_top = 0;
-    char output = 0;
+    char pop_output = 0;
 
     params = data->params;
 
     StackPeek(params->doc_stack, &stack_top);
-    if('"' == stack_top) /* reached end of "string". clean from stack */
+    if(IsString(stack_top)) /* reached end of "string". clean from stack */
     {
-        StackPop(params->doc_stack, &output);
+        StackPop(params->doc_stack, &pop_output);
     }
-    else if('*' != stack_top) /* if not in a note */
+    else if(!IsNote(stack_top))
     {
         StackPush(params->doc_stack, data->val);
     }
@@ -369,12 +369,8 @@ int HandleOpenNote(StateMachineData* data)
 
     StackPeek(params->doc_stack, &stack_top);
 
-    if(stack_top == '"') /* means currently in a string. do not parse as note. */
-    {
-        return PARSE_LINE;
-    }
-	
-    if(params->line[params->line_index] == '*')
+    /* if not already in string the match to note */
+    if(!IsString(stack_top) && IsNote(params->line[params->line_index]))
     {
       StackPush(params->doc_stack, &params->line[params->line_index]);
       ++params->line_index;
@@ -387,16 +383,16 @@ int HandleCloseNote(StateMachineData* data)
 {
     SParserParams *params;
     char stack_top = 0;
-    char output = 0;
+    char pop_output = 0;
 
     params = data->params;
 
-    if(params->line[params->line_index] == '/') /* possible reach to end on note */
+    if('/' == params->line[params->line_index]) /* possible reach to end on note */
     {
         StackPeek(params->doc_stack, &stack_top);
-        if(stack_top == '*') /* note was open previously in txt - close it. */
+        if(IsNote(stack_top)) /* note was open previously in txt - close it. */
         {
-            StackPop(params->doc_stack, &output);
+            StackPop(params->doc_stack, &pop_output);
         }
         ++params->line_index;
     }
