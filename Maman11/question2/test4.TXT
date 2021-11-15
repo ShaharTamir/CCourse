@@ -15,8 +15,8 @@ test for comments and strings when stack is empty
 "/***/{{{
 }}}}
 "
-
+*/
 /*"{{"*/
 /*"*/
 
-The output should be balanced.
+The output should not be balanced.

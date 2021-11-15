@@ -10,6 +10,8 @@
 #define STACK_STARTING_SIZE 20
 #define PARSER_FAIL -1
 #define PARSER_SUCCESS 0
+#define TRUE 1
+#define FALSE 0
 
 typedef enum 
 {
@@ -29,6 +31,8 @@ typedef enum
 
 typedef struct
 {
+    int is_string;
+    int is_note;
     int bytes_read;
     int line_index;
     Stack* doc_stack;
@@ -60,8 +64,6 @@ static int HandlePrintSummary(StateMachineData* data);
 
 /* SERVICE FUNCTIONS */
 static int IsParenthesMatch(char stack_top, char new_input);
-static int IsString(char c);
-static int IsNote(char c);
 static void PrintLineReport(char *line, int is_balanced);
 
 int main(int argc, char *argv[])
@@ -87,6 +89,9 @@ void RunSingleParTest(FILE* input)
         return;
     }
 
+    /* init state machine data */
+    parser_data.is_note = FALSE;
+    parser_data.is_string = FALSE;
     parser_data.bytes_read = 0;
     parser_data.line_index = 0;
     parser_data.input = input;
@@ -175,11 +180,12 @@ int HandleReadLines(StateMachineData* data)
     SParserParams *parser_data = NULL;
     size_t max_read_size = MAX_LINE_INPUT;
     
-    parser_data = (SParserParams*)data->params;
-    StackEmptyStack(parser_data->line_stack);
+    parser_data = (SParserParams*)data->params; /* assign ptr to local var to ease access to parser data */
 
-    parser_data->bytes_read = getline(&parser_data->line, &max_read_size, parser_data->input);
+    StackEmptyStack(parser_data->line_stack); /* empty the line stack before each read */
+    parser_data->is_string = FALSE;
     parser_data->line_index = 0;
+    parser_data->bytes_read = getline(&parser_data->line, &max_read_size, parser_data->input);
 
     if(EOF == parser_data->bytes_read)
     {
@@ -191,17 +197,17 @@ int HandleReadLines(StateMachineData* data)
 
 int HandleParseLines(StateMachineData* data)
 {
-    static char g_special_characters[] = {'{', '(', '[', ']', ')', '}', '"', '/', '*', EOF};
+    static char special_characters[] = {'{', '(', '[', ']', ')', '}', '"', '/', '*', EOF};
     SParserParams *parser_data = NULL;
     int spec_char_index = 0;
 
     parser_data = (SParserParams*)data->params;
 
-    while(parser_data->line_index < parser_data->bytes_read)
+    while(parser_data->line_index < parser_data->bytes_read) /* read until line is finished */ 
     {
-        for(spec_char_index = 0; spec_char_index < sizeof(g_special_characters); ++spec_char_index)
+        for(spec_char_index = 0; spec_char_index < sizeof(special_characters); ++spec_char_index)
         {
-            if(parser_data->line[parser_data->line_index] == g_special_characters[spec_char_index])
+            if(parser_data->line[parser_data->line_index] == special_characters[spec_char_index])
             {
                 *(char *)data->val = parser_data->line[parser_data->line_index];
                 ++parser_data->line_index;
@@ -250,15 +256,12 @@ int HandleSpecialCharacter(StateMachineData* data)
 int HandleOpenParenthes(StateMachineData* data)
 {
     SParserParams *parser_data;
-    char stack_top = 0;
-
     parser_data = (SParserParams*)data->params;
 
-    StackPeek(parser_data->doc_stack, &stack_top);
-    if(!IsString(stack_top) && !IsNote(stack_top))
+    if(!parser_data->is_string && !parser_data->is_note)
     {
         if('{' == *(char*)data->val)
-            StackPush(parser_data->doc_stack, data->val);
+            StackPush(parser_data->doc_stack, data->val); /* doc stack follows only the {} parenthes */
             
         StackPush(parser_data->line_stack, data->val);
     }
@@ -274,14 +277,14 @@ int HandleCloseParenthes(StateMachineData* data)
 
     parser_data = (SParserParams*)data->params;
     
-    StackPeek(parser_data->doc_stack, &stack_top);
-    if(IsString(stack_top)  || IsNote(stack_top)) /* means in note or in string */
+    if(parser_data->is_string  || parser_data->is_note) /* string or note ignore parenthes */
     {
         return PARSE_LINE;
     }
 
-    if(StackIsEmpty(parser_data->line_stack))
+    if(StackIsEmpty(parser_data->line_stack)) 
     {
+        /* found ']' or ')' without open - document is unbalanced */
         *(int*)data->return_val = PARSER_FAIL;
         StackPush(parser_data->line_stack, data->val);
     }
@@ -292,6 +295,7 @@ int HandleCloseParenthes(StateMachineData* data)
             StackPop(parser_data->line_stack, &pop_output);
         else /* parenthes do not match */
         {
+            /* found ']' or ')' without open match - document is unbalanced */
             *(int*)data->return_val = PARSER_FAIL;
             StackPush(parser_data->line_stack, data->val);
         }
@@ -302,39 +306,39 @@ int HandleCloseParenthes(StateMachineData* data)
 
 int HandleCloseSpecialParenthes(StateMachineData* data)
 {
-    SParserParams *params;
+    SParserParams *parser_data;
     char stack_top = 0;
     char pop_output = 0;
 
-    params = (SParserParams*)data->params;
+    parser_data = (SParserParams*)data->params;
     
-    StackPeek(params->doc_stack, &stack_top);
-    if(IsString(stack_top)  || IsNote(stack_top))
+    if(parser_data->is_string  || parser_data->is_note)
     {
         return PARSE_LINE;
     }
 
+    StackPeek(parser_data->doc_stack, &stack_top);
     if(IsParenthesMatch(stack_top, *(char*)data->val))
     {
-        StackPop(params->doc_stack, &pop_output);
+        StackPop(parser_data->doc_stack, &pop_output);
         
-        if(StackIsEmpty(params->line_stack))
+        if(StackIsEmpty(parser_data->line_stack)) 
         {
-            StackPush(params->line_stack, data->val);
+            StackPush(parser_data->line_stack, data->val); /* means spec line is not balanced but doc might be */
         }
         else
         {
-            StackPeek(params->line_stack, &stack_top);
+            StackPeek(parser_data->line_stack, &stack_top);
             if(IsParenthesMatch(stack_top, *(char*)data->val))
-                StackPop(params->line_stack, &pop_output);
+                StackPop(parser_data->line_stack, &pop_output);
             else
-                StackPush(params->line_stack, data->val);
+                StackPush(parser_data->line_stack, data->val); /* means spec line is not balanced but doc might be */
         }
     }
     else
     {
-        StackPush(params->doc_stack, data->val);
-        StackPush(params->line_stack, data->val);
+        StackPush(parser_data->doc_stack, data->val); /* found a '}' without '{' before him. doc will be unbalanced. */
+        StackPush(parser_data->line_stack, data->val); /* if '}' didn't have '{' before, then surely line is unbalanced */
     }    
 
     return PARSE_LINE;
@@ -342,20 +346,16 @@ int HandleCloseSpecialParenthes(StateMachineData* data)
 
 int HandleTxtChar(StateMachineData* data)
 {
-    SParserParams *params;
-    char stack_top = 0;
-    char pop_output = 0;
+    SParserParams *parser_data;
+    parser_data = (SParserParams*)data->params;
 
-    params = data->params;
-
-    StackPeek(params->doc_stack, &stack_top);
-    if(IsString(stack_top)) /* reached end of "string". clean from stack */
+    if(parser_data->is_string) /* reached end of "string" */
     {
-        StackPop(params->doc_stack, &pop_output);
+        parser_data->is_string = FALSE;
     }
-    else if(!IsNote(stack_top))
+    else if(!parser_data->is_note)
     {
-        StackPush(params->doc_stack, data->val);
+        parser_data->is_string = TRUE;
     }
 
     return PARSE_LINE;
@@ -363,17 +363,15 @@ int HandleTxtChar(StateMachineData* data)
 
 int HandleOpenNote(StateMachineData* data)
 {
-    SParserParams *params;
-    char stack_top = 0;
-    params = data->params;
+    SParserParams *parser_data;
+    parser_data = data->params;
 
-    StackPeek(params->doc_stack, &stack_top);
-
-    /* if not already in string the match to note */
-    if(!IsString(stack_top) && IsNote(params->line[params->line_index]))
+    /* if not already in string or note, and next char in line completes note sign */
+    if(!parser_data->is_string && !parser_data->is_note &&
+        '*' == parser_data->line[parser_data->line_index])
     {
-      StackPush(params->doc_stack, &params->line[params->line_index]);
-      ++params->line_index;
+      parser_data->is_note = TRUE;
+      ++parser_data->line_index; /* handled this line index. move to next. */
     }
 
     return PARSE_LINE;
@@ -381,20 +379,14 @@ int HandleOpenNote(StateMachineData* data)
 
 int HandleCloseNote(StateMachineData* data)
 {
-    SParserParams *params;
-    char stack_top = 0;
-    char pop_output = 0;
+    SParserParams *parser_data;
+    parser_data = (SParserParams*)data->params;
 
-    params = data->params;
-
-    if('/' == params->line[params->line_index]) /* possible reach to end on note */
+    /* not already in string and possible reach to end on note */
+    if(!parser_data->is_string && '/' == parser_data->line[parser_data->line_index]) 
     {
-        StackPeek(params->doc_stack, &stack_top);
-        if(IsNote(stack_top)) /* note was open previously in txt - close it. */
-        {
-            StackPop(params->doc_stack, &pop_output);
-        }
-        ++params->line_index;
+        parser_data->is_note = FALSE; /* close note if was opened */
+        ++parser_data->line_index;
     }
 
     return PARSE_LINE;
@@ -402,15 +394,17 @@ int HandleCloseNote(StateMachineData* data)
 
 int HandleLineDocBalance(StateMachineData* data)
 {
-    SParserParams *params;
+    SParserParams *parser_data;
     char pop_output = 0;
 
-    params = data->params;
+    parser_data = data->params;
 
+    /* if doc is still valid - verify that there are no '(' or '[' that disqualify the doc 
+        and are hidden in the line stack  */
     while(*(int*)data->return_val != PARSER_FAIL &&
-        !StackIsEmpty(params->line_stack))
+        !StackIsEmpty(parser_data->line_stack))
     {
-        StackPop(params->line_stack, &pop_output);
+        StackPop(parser_data->line_stack, &pop_output);
         if(pop_output != '{' && pop_output != '}')
         {
             *(int*)data->return_val = PARSER_FAIL;
@@ -456,10 +450,6 @@ int IsParenthesMatch(char stack_top, char new_input)
             return 0;
     }
 }
-
-int IsString(char c) { return '"' == c; }
-
-int IsNote(char c) { return '*' == c; }
 
 void PrintLineReport(char *line, int is_balanced)
 {
