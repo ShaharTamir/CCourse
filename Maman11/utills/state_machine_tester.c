@@ -206,6 +206,7 @@ void TestStateMachineRun(TestStatusType *status)
     int cycles = 0;
     ETestStatus ret_val = TEST_FAIL;
 
+    PrintTestSubject("FULL MACHINE RUN");
     PrepareForTest("Test full machine run status is success", status);
     m = StateMachineCreate(START_STATE, NUM_STATES);
     d.val = &val;

@@ -1,3 +1,3 @@
-make clean -C ./question1 
-make clean -C ./question2
+make clean -C ./contract
+make clean -C ./par
 make clean -C ./utills

@@ -1,1 +1,0 @@
-test non-numeric chars - abcdef#LLMN 67890123#HIJKMNOpqrstu(?@AB,1124-8)
