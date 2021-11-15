@@ -4,10 +4,11 @@
 #define MAX_STRING_LENGTH 80
 #define MIN_ROW 1
 
-void RunSingleConTest(FILE* input);
-void contract(char s1[], char s2[]);
-int IsNeighbor(char a, char b);
-int IsNumerical(char note);
+static void RunSingleConTest(FILE* input);
+static void Contract(char s1[], char s2[]);
+static int IsNeighbor(char a, char b);
+static int IsNumerical(char note);
+static int IsEnd(char note);
 
 int main (int argc, char *argv[])
 {
@@ -21,54 +22,54 @@ int main (int argc, char *argv[])
 
 void RunSingleConTest(FILE* input)
 {
-    char inputString[MAX_STRING_LENGTH];
-    char outputString[MAX_STRING_LENGTH];
+    char input_str[MAX_STRING_LENGTH];
+    char output_str[MAX_STRING_LENGTH];
 
-    fgets(inputString, MAX_STRING_LENGTH, input);
+    fgets(input_str, MAX_STRING_LENGTH, input);
 
-    contract(inputString, outputString);
+    contract(input_str, output_str);
 
     printf("before: ");
-    printf("%s\n\n", inputString);
+    printf("%s\n\n", input_str);
     printf("after: ");
-    printf("%s\n\n", outputString);
+    printf("%s\n\n", output_str);
 }
 
-void contract(char s1[], char s2[])
+void Contract(char s1[], char s2[])
 {
-    int s1IndexStartRun = 0, s1IndexRunner = 0, 
-    s2Index = 0, neighborsCounter = 0;
-    char prevChar = '\0';
+    int s1_index_run_start = 0, s1_index_runner = 0, 
+    s2_index = 0, neighbors_cntr = 0;
+    char prev_char = '\0';
 
-    while('\0' != s1[s1IndexStartRun] && EOF != s1[s1IndexStartRun])
+    while(!IsEnd(s1[s1_index_run_start]))
     {
-        neighborsCounter = 0;
-        prevChar = s1[s1IndexStartRun];
-        ++s1IndexRunner;
+        neighbors_cntr = 0;
+        prev_char = s1[s1_index_run_start];
+        ++s1_index_runner;
 
-        while('\0' != s1[s1IndexRunner] && EOF != s1[s1IndexRunner] && 
-            IsNeighbor(s1[s1IndexRunner], prevChar))
+        while(!IsEnd(s1[s1_index_runner]) && 
+            IsNeighbor(s1[s1_index_runner], prev_char))
         {
-            ++neighborsCounter;
-            prevChar = s1[s1IndexRunner++];
+            ++neighbors_cntr;
+            prev_char = s1[s1_index_runner++];
         }
 
-        s2[s2Index++] = s1[s1IndexStartRun];
+        s2[s2_index++] = s1[s1_index_run_start];
 
-        if(0 != neighborsCounter)
+        if(0 != neighbors_cntr)
         {
-            if(MIN_ROW < neighborsCounter)
+            if(MIN_ROW < neighbors_cntr)
             {
-                s2[s2Index++] = '-';
+                s2[s2_index++] = '-';
             }
             
-            s2[s2Index++] = prevChar;
+            s2[s2_index++] = prev_char;
         }
 
-        s1IndexStartRun = s1IndexRunner;
+        s1_index_run_start = s1_index_runner;
     }
 
-    s2[s2Index] = '\0';
+    s2[s2_index] = '\0';
 }
 
 int IsNeighbor(char a, char b)
@@ -81,4 +82,9 @@ int IsNumerical(char note)
     return (note >= '0' && note <= '9') || 
         (note >= 'a' && note <= 'z') ||
         (note >= 'A' && note <= 'Z');
+}
+
+int IsEnd(char note)
+{
+    return '\0' == note || EOF == note;
 }
