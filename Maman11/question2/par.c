@@ -18,9 +18,11 @@ typedef enum
     SPECIAL_CHARACTER,
     OPEN_PARENTHES,
     CLOSE_PARENTHES,
+    CLOSE_SPECIAL_PARENTHES,
     TXT,
     OPEN_NOTE,
     CLOSE_NOTE,
+    VERIFY_LINE_DOC_BALANCE,
     FINISH_READ,
     NUM_STATES
 } EParserState;
@@ -43,22 +45,24 @@ static int CreateAll(StateMachineType** machine, SParserParams* params);
 static void DestroyAll(StateMachineType** machine, SParserParams* parser_data);
 static int InitStatesHandlers(StateMachineType* machine);
 
-/* PARSER FUCNTIONS */
-int ReadLines(StateMachineData* data);
-int ParseLines(StateMachineData* data);
-
-/* HNADLERS FUNCTIONS */
-int HandleSpecialCharacter(StateMachineData* data);
-int HandleOpenParenthes(StateMachineData* data);
-int HandleCloseParenthes(StateMachineData* data);
-int HandleTxtChar(StateMachineData* data);
-int HandleOpenNote(StateMachineData* data);
-int HandleCloseNote(StateMachineData* data);
+/* STATE MACHINE HANDLERS FUNCTIONS */
+static int HandleReadLines(StateMachineData* data);
+static int HandleParseLines(StateMachineData* data);
+static int HandleSpecialCharacter(StateMachineData* data);
+static int HandleOpenParenthes(StateMachineData* data);
+static int HandleCloseParenthes(StateMachineData* data);
+static int HandleCloseSpecialParenthes(StateMachineData* data);
+static int HandleTxtChar(StateMachineData* data);
+static int HandleOpenNote(StateMachineData* data);
+static int HandleCloseNote(StateMachineData* data);
+static int HandleLineDocBalance(StateMachineData* data);
+static int HandlePrintSummary(StateMachineData* data);
 
 /* SERVICE FUNCTIONS */
-int isParenthesMatch(char stackTop, char newInput);
-void PrintLineReport(char *line, int isBalanced);
-int PrintIsTextBalanced(StateMachineData* data);
+static int IsParenthesMatch(char stack_top, char new_input);
+static int IsString(char c);
+static int IsNote(char c);
+static void PrintLineReport(char *line, int is_balanced);
 
 int main(int argc, char *argv[])
 {
@@ -74,6 +78,7 @@ void RunSingleParTest(FILE* input)
     StateMachineData machine_data = {NULL, NULL, NULL};
     SParserParams parser_data;
     char val = 0;
+    int ret_val = PARSER_SUCCESS;
 
     if(PARSER_FAIL == CreateAll(&machine, &parser_data))
     {
@@ -87,6 +92,7 @@ void RunSingleParTest(FILE* input)
     parser_data.input = input;
     machine_data.val = &val;
     machine_data.params = &parser_data;
+    machine_data.return_val = &ret_val;
 
     if(STATE_MACHINE_FAIL == InitStatesHandlers(machine))
     {
@@ -132,16 +138,17 @@ int InitStatesHandlers(StateMachineType* machine)
 {
     int add_status = STATE_MACHINE_OK;
 
-    add_status &= StateMachineAddState(machine, READ_NEW_LINE, ReadLines);
-    add_status &= StateMachineAddState(machine, PARSE_LINE, ParseLines);
+    add_status &= StateMachineAddState(machine, READ_NEW_LINE, HandleReadLines);
+    add_status &= StateMachineAddState(machine, PARSE_LINE, HandleParseLines);
     add_status &= StateMachineAddState(machine, SPECIAL_CHARACTER, HandleSpecialCharacter);
     add_status &= StateMachineAddState(machine, OPEN_PARENTHES, HandleOpenParenthes);
     add_status &= StateMachineAddState(machine, CLOSE_PARENTHES, HandleCloseParenthes);
+    add_status &= StateMachineAddState(machine, CLOSE_SPECIAL_PARENTHES, HandleCloseSpecialParenthes);
     add_status &= StateMachineAddState(machine, TXT, HandleTxtChar);
     add_status &= StateMachineAddState(machine, OPEN_NOTE, HandleOpenNote);
     add_status &= StateMachineAddState(machine, CLOSE_NOTE, HandleCloseNote);
-    add_status &= StateMachineAddState(machine, FINISH_READ, PrintIsTextBalanced);
-
+    add_status &= StateMachineAddState(machine, VERIFY_LINE_DOC_BALANCE, HandleLineDocBalance);
+    add_status &= StateMachineAddState(machine, FINISH_READ, HandlePrintSummary);
     return add_status;
 }
 
@@ -161,16 +168,16 @@ void DestroyAll(StateMachineType** machine, SParserParams* parser_data)
 }
 
 /*************************************
-*          PARSER FUNCTIONS 
+*  STATE MACHINE HANDLERS FUNCTIONS 
 *************************************/
-int ReadLines(StateMachineData* data)
+int HandleReadLines(StateMachineData* data)
 {
     SParserParams *parser_data = NULL;
     size_t max_read_size = MAX_LINE_INPUT;
     
     parser_data = (SParserParams*)data->params;
-
     StackEmptyStack(parser_data->line_stack);
+
     parser_data->bytes_read = getline(&parser_data->line, &max_read_size, parser_data->input);
     parser_data->line_index = 0;
 
@@ -182,7 +189,7 @@ int ReadLines(StateMachineData* data)
     return PARSE_LINE;
 }
 
-int ParseLines(StateMachineData* data)
+int HandleParseLines(StateMachineData* data)
 {
     static char g_special_characters[] = {'{', '(', '[', ']', ')', '}', '"', '/', '*', EOF};
     SParserParams *parser_data = NULL;
@@ -207,6 +214,9 @@ int ParseLines(StateMachineData* data)
 
     PrintLineReport(parser_data->line, StackIsEmpty(parser_data->line_stack));
 
+    if(!StackIsEmpty(parser_data->line_stack))
+        return VERIFY_LINE_DOC_BALANCE;
+
     return READ_NEW_LINE;
 }
 
@@ -219,6 +229,7 @@ int HandleSpecialCharacter(StateMachineData* data)
         case '[':
             return OPEN_PARENTHES;
         case '}':
+            return CLOSE_SPECIAL_PARENTHES;
         case ')':
         case ']':
             return CLOSE_PARENTHES;
@@ -236,23 +247,20 @@ int HandleSpecialCharacter(StateMachineData* data)
     }
 }
 
-/*************************************
-*          HANDLERS FUNCTIONS 
-*************************************/
 int HandleOpenParenthes(StateMachineData* data)
 {
-    SParserParams *params;
+    SParserParams *parser_data;
     char stack_top = 0;
 
-    params = (SParserParams*)data->params;
+    parser_data = (SParserParams*)data->params;
 
-    StackPeek(params->doc_stack, &stack_top);
-    if(stack_top != '"' && stack_top != '*') /* not in note and not in string */
+    StackPeek(parser_data->doc_stack, &stack_top);
+    if(!IsString(stack_top) && !IsNote(stack_top))
     {
         if('{' == *(char*)data->val)
-            StackPush(params->doc_stack, data->val);
+            StackPush(parser_data->doc_stack, data->val);
             
-        StackPush(params->line_stack, data->val);
+        StackPush(parser_data->line_stack, data->val);
     }
 
     return PARSE_LINE;
@@ -260,40 +268,74 @@ int HandleOpenParenthes(StateMachineData* data)
 
 int HandleCloseParenthes(StateMachineData* data)
 {
+    SParserParams *parser_data;
+    char stack_top = 0;
+    char pop_output = 0;
+
+    parser_data = (SParserParams*)data->params;
+    
+    StackPeek(parser_data->doc_stack, &stack_top);
+    if(IsString(stack_top)  || IsNote(stack_top)) /* means in note or in string */
+    {
+        return PARSE_LINE;
+    }
+
+    if(StackIsEmpty(parser_data->line_stack))
+    {
+        *(int*)data->return_val = PARSER_FAIL;
+        StackPush(parser_data->line_stack, data->val);
+    }
+    else
+    {
+        StackPeek(parser_data->line_stack, &stack_top);
+        if(IsParenthesMatch(stack_top, *(char*)data->val))
+            StackPop(parser_data->line_stack, &pop_output);
+        else /* parenthes do not match */
+        {
+            *(int*)data->return_val = PARSER_FAIL;
+            StackPush(parser_data->line_stack, data->val);
+        }
+    }
+
+    return PARSE_LINE;
+}
+
+int HandleCloseSpecialParenthes(StateMachineData* data)
+{
     SParserParams *params;
     char stack_top = 0;
-    char output = 0;
+    char pop_output = 0;
 
     params = (SParserParams*)data->params;
     
-    if(!StackIsEmpty(params->doc_stack))
+    StackPeek(params->doc_stack, &stack_top);
+    if(IsString(stack_top)  || IsNote(stack_top))
     {
-        StackPeek(params->doc_stack, &stack_top);
-        if(stack_top != '"' && stack_top != '*') /* means not in note and not in string */
-        {
-            if(isParenthesMatch(stack_top, *(char*)data->val))
-            {
-                StackPop(params->doc_stack, &output);
-                
-                if(!StackIsEmpty(params->line_stack))
-                    StackPop(params->line_stack, &output);
-                else
-                    StackPush(params->line_stack, data->val); /* make this line report as uneven */
-            }
-            else /* parenthes do not match */
-            {
-                /* NOTE: here we can actually quit parsing because we know the result. */
-                StackPush(params->doc_stack, data->val);
-                StackPush(params->line_stack, data->val);
-            }
-        } /* else do nothing */
+        return PARSE_LINE;
     }
-    else /* means both are surely empty make doc + line uneven */
+
+    if(IsParenthesMatch(stack_top, *(char*)data->val))
     {
-        /* NOTE: here we can actually quit parsing because we know the result. */
+        StackPop(params->doc_stack, &pop_output);
+        
+        if(StackIsEmpty(params->line_stack))
+        {
+            StackPush(params->line_stack, data->val);
+        }
+        else
+        {
+            StackPeek(params->line_stack, &stack_top);
+            if(IsParenthesMatch(stack_top, *(char*)data->val))
+                StackPop(params->line_stack, &pop_output);
+            else
+                StackPush(params->line_stack, data->val);
+        }
+    }
+    else
+    {
         StackPush(params->doc_stack, data->val);
         StackPush(params->line_stack, data->val);
-    }
+    }    
 
     return PARSE_LINE;
 }
@@ -362,47 +404,72 @@ int HandleCloseNote(StateMachineData* data)
     return PARSE_LINE;
 }
 
+int HandleLineDocBalance(StateMachineData* data)
+{
+    SParserParams *params;
+    char pop_output = 0;
+
+    params = data->params;
+
+    while(*(int*)data->return_val != PARSER_FAIL &&
+        !StackIsEmpty(params->line_stack))
+    {
+        StackPop(params->line_stack, &pop_output);
+        if(pop_output != '{' && pop_output != '}')
+        {
+            *(int*)data->return_val = PARSER_FAIL;
+            break;
+        }
+    }
+
+    return READ_NEW_LINE;
+}
+
+int HandlePrintSummary(StateMachineData* data)
+{   
+    SParserParams *parser_data;
+    parser_data = (SParserParams *)data->params;
+    
+    printf("\n****** SUMMARY ******\n\n");
+    printf("The input is ");
+
+    if(!StackIsEmpty(parser_data->doc_stack) || PARSER_FAIL == *(int*)data->return_val)
+    {
+        printf("not ");
+    }
+
+    printf("balanced\n\n");
+
+    return STATE_MACHINE_END_STATE;
+}
+
 /*************************************
 *          SERVICE FUNCTIONS 
 *************************************/
-int isParenthesMatch(char stackTop, char newInput)
+int IsParenthesMatch(char stack_top, char new_input)
 {
-    switch(stackTop)
+    switch(stack_top)
     {
         case '(':
-            return ')' == newInput;
+            return ')' == new_input;
         case '[':
-            return ']' == newInput;
+            return ']' == new_input;
         case '{':
-            return '}' == newInput;
+            return '}' == new_input;
         default:
             return 0;
     }
 }
 
-int PrintIsTextBalanced(StateMachineData* data)
-{   
-    SParserParams *parser_data;
-    parser_data = (SParserParams *)data->params;
-    
-    printf("\n\n****** SUMMARY ******\n\n");
-    printf("The input is ");
+int IsString(char c) { return '"' == c; }
 
-    if(!StackIsEmpty(parser_data->doc_stack))
-    {
-        printf("not ");
-    }
+int IsNote(char c) { return '*' == c; }
 
-    printf("balanced\n");
-
-    return STATE_MACHINE_END_STATE;
-}
-
-void PrintLineReport(char *line, int isBalanced)
+void PrintLineReport(char *line, int is_balanced)
 {
-    printf("\nThis line is ");
+    printf("This line is ");
     
-    if(!isBalanced)
+    if(!is_balanced)
         printf("not ");    
     
     printf("balanced : %s\n", line);
