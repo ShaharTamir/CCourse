@@ -8,16 +8,13 @@
 #define FALSE 0
 #define TRUE 1
 
-#define INDEX(row, col) (row * N + col)
-
 static void RunMagic(FILE* in); 
-static int ParseInput(FILE* in, int* all_valid, int magic_matrix[]);
-static void PrintMatrix(int magic_matrix[]);
-static int CalculateIsMagic(int magic_matrix[]);
-static int CheckCols(int magic_matrix[], int* sum);
-static int CheckDiag(int magic_matrix[], int* sum);
-
-static int CheckRows(int magic_matrix[], int* sum);
+static int ParseInput(FILE* in, int* all_valid, int magic_matrix[][N]);
+static void PrintMatrix(int magic_matrix[][N]);
+static int CalculateIsMagic(int magic_matrix[][N]);
+static int CheckCols(int magic_matrix[][N], int* sum);
+static int CheckDiag(int magic_matrix[][N], int* sum);
+static int CheckRows(int magic_matrix[][N], int* sum);
 
 int main(int argc, char *argv[])
 {
@@ -44,7 +41,7 @@ int main(int argc, char *argv[])
 
 void RunMagic(FILE* in)
 {
-    int magic_matrix[N*N] = {0};
+    int magic_matrix[N][N] = {0};
     int input_range_valid = 1;
     
     if(ParseInput(in, &input_range_valid, magic_matrix) && input_range_valid)
@@ -62,7 +59,7 @@ void RunMagic(FILE* in)
     }
 }
 
-int ParseInput(FILE* in, int* all_valid, int magic_matrix[])
+int ParseInput(FILE* in, int* all_valid, int magic_matrix[][N])
 {
     int curr = 0;
     int i = 0;
@@ -78,7 +75,7 @@ int ParseInput(FILE* in, int* all_valid, int magic_matrix[])
             if(curr < 1 || curr > N*N) 
                 all_valid = 0;
 
-            magic_matrix[i] = curr;
+            magic_matrix[i / N][i % N] = curr;
         }    
         else
         {
@@ -92,7 +89,7 @@ int ParseInput(FILE* in, int* all_valid, int magic_matrix[])
     return i == N*N;
 }
 
-void PrintMatrix(int magic_matrix[])
+void PrintMatrix(int magic_matrix[][N])
 {
     int r = 0, c = 0;
     
@@ -100,14 +97,14 @@ void PrintMatrix(int magic_matrix[])
     {
         for(c = 0; c < N - 1; ++c) /* columns */
         {
-            printf("%3d\t", magic_matrix[INDEX(r,c)]);
+            printf("%3d\t", magic_matrix[r][c]);
         }
 
-        printf("%3d\n", magic_matrix[INDEX(r,c)]);
+        printf("%3d\n", magic_matrix[r][c]);
     }
 }
 
-int CalculateIsMagic(int magic_matrix[])
+int CalculateIsMagic(int magic_matrix[][N])
 {
     int sum = 0;
     if(CheckRows(magic_matrix, &sum))
@@ -116,7 +113,7 @@ int CalculateIsMagic(int magic_matrix[])
     return 0;
 }
 
-int CheckRows(int magic_matrix[], int* sum)
+int CheckRows(int magic_matrix[][N], int* sum)
 {
     int r = 0, c = 0;
     int curr_sum = 0;
@@ -126,7 +123,7 @@ int CheckRows(int magic_matrix[], int* sum)
 
         for(c = 0; c < N; ++c) /* columns */
         {
-            curr_sum += magic_matrix[INDEX(r,c)];
+            curr_sum += magic_matrix[r][c];
             if(curr_sum < 0) /* if sum passed the max of signed int */
                 return FALSE;    
         }
@@ -141,7 +138,7 @@ int CheckRows(int magic_matrix[], int* sum)
 }
 
 
-int CheckCols(int magic_matrix[], int* sum)
+int CheckCols(int magic_matrix[][N], int* sum)
 {
     int r = 0, c = 0;
     int curr_sum = 0;
@@ -152,7 +149,7 @@ int CheckCols(int magic_matrix[], int* sum)
 
         for(r = 0; r < N; ++r) /* rows */
         {
-            curr_sum += magic_matrix[INDEX(r,c)];
+            curr_sum += magic_matrix[r][c];
 
             if(curr_sum < 0) /* if sum passed the max of signed int */
                 return FALSE;    
@@ -165,14 +162,14 @@ int CheckCols(int magic_matrix[], int* sum)
     return TRUE;
 }
 
-int CheckDiag(int magic_matrix[], int* sum)
+int CheckDiag(int magic_matrix[][N], int* sum)
 {
     int d = 0, u = 0;
     int curr_sum = 0;
     
     for(d = 0; d < N; ++d) /* up left to down right diag */
     {
-        curr_sum += magic_matrix[INDEX(d,d)];
+        curr_sum += magic_matrix[d][d];
 
         if(curr_sum < 0) /* if sum passed the max of signed int */
             return FALSE;
@@ -184,7 +181,7 @@ int CheckDiag(int magic_matrix[], int* sum)
     curr_sum = 0;
     for(u = N - 1; u >= 0; --u) /* down left to up right*/
     {
-        curr_sum += magic_matrix[INDEX(u, N - 1 - u)];
+        curr_sum += magic_matrix[u][N - 1 - u];
 
         if(curr_sum < 0) /* if sum passed the max of signed int */
             return FALSE;
