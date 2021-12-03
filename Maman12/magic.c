@@ -1,15 +1,17 @@
 #include <stdio.h> /* FILE, printf, getc */
 #include <ctype.h> /* isspace, isdigit */
-#include <stdlib.h> /* atoi */
+#include <stdlib.h> /* atoi, malloc, free */
+#include <limits.h> /* INT_MAX */
 
-#include "..\Maman11\utills\test_input.h" /* HandleInput */
+#include <test_input.h> /* HandleInput */
 
 #define N 5
 #define FALSE 0
 #define TRUE 1
 
 static void RunMagic(FILE* in); 
-static int ParseInput(FILE* in, int* all_valid, int magic_matrix[][N]);
+static int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N]);
+static void CheckValidity(int curr, int* all_valid, int* is_basic, char* num_LUT);
 static void PrintMatrix(int magic_matrix[][N]);
 static int CalculateIsMagic(int magic_matrix[][N]);
 static int CheckCols(int magic_matrix[][N], int* sum);
@@ -18,21 +20,25 @@ static int CheckRows(int magic_matrix[][N], int* sum);
 
 int main(int argc, char *argv[])
 {
-    printf("\n\n************************* Welcome to the MAGIC MATRIX! ***************************\n*\n");
+    printf("\n\n************************* Welcome to the MAGIC MATRIX! ************************\n*\n");
     printf("* This program will receive %d numbers as input from the user,\n", N*N);
     printf("* will print the matrix input and after calculation will\n");
     printf("* determine if the matrix is a magic matrix or not.\n*\n");
 
-    printf("* A magic matrix has the same sum in all rows, columns and the main two diagonals.\n*\n");
+    printf("* A basic magic matrix has the same sum in all\n");
+    printf("* rows, columns and the main two diagonals,\n");
+    printf("* and all numbers are different from each other.\n*\n");
 
-    printf("* If user input is larger or smaller than the matrix, then the program will end.\n");
-    printf("* If user input is not an integer, (white spaces are allowed), then the program will end.\n*\n");
+    printf("* If user input is larger or smaller than the matrix,\n");
+    printf("* or if user input is not an integer, (white spaces allowed),\n");
+    printf("* then the program will end.\n*\n");
 
-    printf("* User input can be used using the terminal command < and a file name to be used as stdin,\n*\
- by mentioning several files names when running the program.\n*\
- or by running the program and entering the input manually (finish with EOF)\n*\n");
+    printf("* User input can be used using:\n");
+    printf("* the terminal command < and a file name to be used as stdin,\n");
+    printf("* by mentioning several files names when running the program,\n");
+    printf("* or by running the program and entering the input manually (finish with EOF)\n*\n");
 
-    printf("********************************   Enjoy.  ****************************************\n\n");
+    printf("********************************   Enjoy.  ************************************\n\n");
 
     HandleInput(argc, argv, RunMagic);
 
@@ -42,16 +48,22 @@ int main(int argc, char *argv[])
 void RunMagic(FILE* in)
 {
     int magic_matrix[N][N] = {0};
-    int input_range_valid = 1;
+    int input_range_valid = TRUE;
+    int is_basic = TRUE;
     
-    if(ParseInput(in, &input_range_valid, magic_matrix) && input_range_valid)
+    if(ParseInput(in, &input_range_valid, &is_basic, magic_matrix) && input_range_valid)
     {
         PrintMatrix(magic_matrix);
         
         if(CalculateIsMagic(magic_matrix))
-            printf("the matrix is magical!\n");
+        {
+            if(is_basic)
+              printf("the matrix is basic magical!\n");
+            else
+              printf("the matrix is magical, but not basic!\n");
+        }
         else
-            printf("the matrix is not magical..\n");
+            printf("the matrix is not basic and not magical..\n");
     }
     else
     {
@@ -59,34 +71,62 @@ void RunMagic(FILE* in)
     }
 }
 
-int ParseInput(FILE* in, int* all_valid, int magic_matrix[][N])
+int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N])
 {
+    char* num_LUT = NULL;
     int curr = 0;
     int i = 0;
+    
+    /* 
+        using look up table to verify all numbers are different,
+        assuming memory is not an issue, and to check each of the numbers
+        in O(1) time complexity.
+    */
+    num_LUT = (char*)malloc(INT_MAX); 
+    
+    if(!num_LUT)
+    {
+      printf("allocation fail, sorry..\n");
+      return FALSE;
+    }
     
     while (fscanf(in, "%d", &curr) != EOF)
     {
         if(i < N*N)
-        {
-            /* 
-                if input is int that is bigger than valid range,
-                we do not check if magic to save time. 
-            */
-            if(curr < 1 || curr > N*N) 
-                all_valid = 0;
-
+        {              
+            CheckValidity(curr, all_valid, is_basic, num_LUT);
             magic_matrix[i / N][i % N] = curr;
         }    
         else
         {
             printf("input has too many variables for matrix\n");
-            return i != N*N;
+            return FALSE;
         }    
 
         ++i;
-    }    
+    }
+    
+    free(num_LUT);
+    num_LUT = NULL;    
     
     return i == N*N;
+}
+
+void CheckValidity(int curr, int* all_valid, int* is_basic, char* num_LUT)
+{
+  /* if input is out of valid range, we do not check if magic to save time. */
+  if(curr < 1 || curr > N*N) 
+  {
+      *all_valid = FALSE;
+  }
+  else if(num_LUT[curr]) /* number is valid but already exist in matrix */
+  {
+      *is_basic = FALSE;
+  }
+  else                   /* number is valid and not yet exist in matrix */
+  {
+      ++num_LUT[curr];
+  }
 }
 
 void PrintMatrix(int magic_matrix[][N])
@@ -117,6 +157,7 @@ int CheckRows(int magic_matrix[][N], int* sum)
 {
     int r = 0, c = 0;
     int curr_sum = 0;
+
     for(r = 0; r < N; ++r) /* rows */
     {
         curr_sum = 0;
@@ -124,8 +165,9 @@ int CheckRows(int magic_matrix[][N], int* sum)
         for(c = 0; c < N; ++c) /* columns */
         {
             curr_sum += magic_matrix[r][c];
+            
             if(curr_sum < 0) /* if sum passed the max of signed int */
-                return FALSE;    
+                return FALSE;  
         }
 
         if(0 == r) /* determine the first sum */

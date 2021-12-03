@@ -153,7 +153,7 @@ void TestDestroyMachine(TestStatusType *status)
     if(m && m->states)
     {
         StateMachineDestroy(m);
-        CheckResult(NULL == m->states, __LINE__, status);
+        CheckResult(NULL == m->states, __LINE__, status); /* this will raise a valgrind err */
     }
     else
     {
@@ -196,6 +196,8 @@ void TestAddState(TestStatusType *status)
 
     PrepareForTest("Verify handler data return value", status);
     CheckResult(TEST_FAIL == ret_val, __LINE__, status);
+    
+    StateMachineDestroy(m);
 }
 
 void TestStateMachineRun(TestStatusType *status)
@@ -225,4 +227,6 @@ void TestStateMachineRun(TestStatusType *status)
 
     PrepareForTest("Verify handler data params", status);
     CheckResult(TEST_MACHINE_NUM_CYCLES == cycles, __LINE__, status);
+    
+    StateMachineDestroy(m);
 }

@@ -1,5 +1,5 @@
 LIB = utills.so
-LIB_FOLDER = ../utills/
+LIB_FOLDER = ../../Utills/
 FILES = par.c
 OBJECTS = par.o
 GCC_FLAGS = -ansi -Wall -pedantic-errors

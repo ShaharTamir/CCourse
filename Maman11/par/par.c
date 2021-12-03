@@ -2,9 +2,9 @@
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* malloc, free */
 
-#include "../utills/test_input.h"
-#include "../utills/stack.h"
-#include "../utills/state_machine.h"
+#include <test_input.h>
+#include <stack.h>
+#include <state_machine.h>
 
 #define MAX_LINE_INPUT 100
 #define STACK_STARTING_SIZE 20
