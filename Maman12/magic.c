@@ -78,11 +78,10 @@ int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N])
     int i = 0;
     
     /* 
-        using look up table to verify all numbers are different,
-        assuming memory is not an issue, and to check each of the numbers
-        in O(1) time complexity.
+        using look-up-table (LUT) to verify all numbers are different,
+        and to check each of the numbers in O(1) time complexity.
     */
-    num_LUT = (char*)malloc(INT_MAX); 
+    num_LUT = (char*)malloc(N * N + 1); 
     
     if(!num_LUT)
     {
