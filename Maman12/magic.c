@@ -1,6 +1,6 @@
 #include <stdio.h> /* FILE, printf, getc */
-#include <ctype.h> /* isspace, isdigit */
 #include <stdlib.h> /* atoi, malloc, free */
+#include <string.h> /* memset */
 #include <limits.h> /* INT_MAX */
 
 #include <test_input.h> /* HandleInput */
@@ -12,6 +12,7 @@
 static void RunMagic(FILE* in); 
 static int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N]);
 static void CheckValidity(int curr, int* all_valid, int* is_basic, char* num_LUT);
+static void HandleInputErr(int scan_res, int index);
 static void PrintMatrix(int magic_matrix[][N]);
 static int CalculateIsMagic(int magic_matrix[][N]);
 static int CheckCols(int magic_matrix[][N], int* sum);
@@ -51,13 +52,13 @@ void RunMagic(FILE* in)
     int input_range_valid = TRUE;
     int is_basic = TRUE;
     
-    if(ParseInput(in, &input_range_valid, &is_basic, magic_matrix) && input_range_valid)
+    if(ParseInput(in, &input_range_valid, &is_basic, magic_matrix))
     {
         PrintMatrix(magic_matrix);
         
         if(CalculateIsMagic(magic_matrix))
         {
-            if(is_basic)
+            if(is_basic && input_range_valid)
               printf("the matrix is basic magical!\n");
             else
               printf("the matrix is magical, but not basic!\n");
@@ -65,10 +66,8 @@ void RunMagic(FILE* in)
         else
             printf("the matrix is not basic and not magical..\n");
     }
-    else
-    {
-        printf("input is invalid. I don't play like that.\nGoodbye.\n");
-    }
+    
+    printf("Goodbye.\n\n");
 }
 
 int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N])
@@ -76,6 +75,7 @@ int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N])
     char* num_LUT = NULL;
     int curr = 0;
     int i = 0;
+    int scan_ret_val = 0;
     
     /* 
         using look-up-table (LUT) to verify all numbers are different,
@@ -89,7 +89,10 @@ int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N])
       return FALSE;
     }
     
-    while (fscanf(in, "%d", &curr) != EOF)
+    memset(num_LUT, 0, N * N + 1); /* initialize num_LUT - all 0's*/ 
+    
+    while ((scan_ret_val = fscanf(in, "%d", &curr)) != EOF &&  /* not End Of File && scanned successfully at least 1 item. */
+            scan_ret_val != 0)
     {
         if(i < N*N)
         {              
@@ -98,17 +101,27 @@ int ParseInput(FILE* in, int* all_valid, int* is_basic, int magic_matrix[][N])
         }    
         else
         {
-            printf("input has too many variables for matrix\n");
-            return FALSE;
+            ++i; /* for err handling */
+            break;
         }    
 
         ++i;
     }
     
     free(num_LUT);
-    num_LUT = NULL;    
+    num_LUT = NULL;
     
-    return i == N*N;
+    if(i == N * N && scan_ret_val == EOF) /* read input successfully, matrix is full */
+    {
+        return TRUE;
+    }
+    else
+    {
+        HandleInputErr(scan_ret_val, i);
+        return FALSE;
+    }
+    
+    return i == N * N;
 }
 
 void CheckValidity(int curr, int* all_valid, int* is_basic, char* num_LUT)
@@ -126,6 +139,24 @@ void CheckValidity(int curr, int* all_valid, int* is_basic, char* num_LUT)
   {
       ++num_LUT[curr];
   }
+}
+
+static void HandleInputErr(int scan_res, int index)
+{
+    printf("input is invalid! : ");
+    
+    if(index > N * N)
+    {
+        printf("too many variables for matrix, %d\n", index);
+    }
+    else if(scan_res == EOF)
+    {
+        printf("too few variables for matrix, %d\n", index);
+    }
+    else
+    {
+        printf("not a an integer.\n");
+    }
 }
 
 void PrintMatrix(int magic_matrix[][N])
