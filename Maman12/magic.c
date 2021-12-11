@@ -261,3 +261,5 @@ int CheckDiag(int magic_matrix[][N], int* sum)
     
     return *sum == curr_sum;
 }
+
+
