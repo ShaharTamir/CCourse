@@ -230,3 +230,4 @@ void TestStateMachineRun(TestStatusType *status)
     
     StateMachineDestroy(m);
 }
+

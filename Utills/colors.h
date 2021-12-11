@@ -13,3 +13,4 @@
 #define CLR_WHT   "\x1B[37m"
 
 #endif /* __COLORS_H__ */
+

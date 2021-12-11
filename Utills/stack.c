@@ -197,3 +197,4 @@ void StackResize(Stack* stack, int new_size)
         STACK_LOG("no more memory to realloc! stack is complitly full!!");
     }
 }
+

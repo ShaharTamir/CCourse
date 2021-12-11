@@ -81,3 +81,4 @@ int StateMachineRun(StateMachineType *machine, StateMachineData* data)
 
     return STATE_MACHINE_FAIL;
 }
+
