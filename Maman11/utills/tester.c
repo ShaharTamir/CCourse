@@ -46,3 +46,4 @@ void PrintSummary(TestStatusType* status)
     printf("Num of tests fail: %s%s %d\\%d %s\n", CLR_BOLD, CLR_RED, status->num_fail, status->test_num, CLR_RESET);
     printf("fin.\n");
 }
+

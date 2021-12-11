@@ -33,3 +33,4 @@ void HandleInput(int argc, char *argv[], InputTestFunc single_test_func);
 
 
 #endif /* __TEST_INPUT_H__ */
+

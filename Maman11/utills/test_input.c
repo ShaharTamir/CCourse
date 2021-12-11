@@ -39,3 +39,4 @@ void HandleInput(int argc, char *argv[], InputTestFunc single_test_func)
         single_test_func(file);
     }
 }
+

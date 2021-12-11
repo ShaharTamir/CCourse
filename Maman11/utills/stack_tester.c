@@ -178,3 +178,4 @@ void TestPop(TestStatusType* status)
 
     StackDestroy(s);
 }
+

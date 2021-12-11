@@ -80,3 +80,4 @@ int StateMachineAddState(StateMachineType *machine, int state_index, StateHandle
 int StateMachineRun(StateMachineType *machine, StateMachineData* data);
 
 #endif /* __STATE_MACHINE_H__ */
+

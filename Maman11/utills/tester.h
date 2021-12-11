@@ -27,3 +27,4 @@ void CheckResult(int condition, int line_of_failure, TestStatusType* status);
 void PrintSummary(TestStatusType* status);
 
 #endif /* __TESTER_H__ */
+

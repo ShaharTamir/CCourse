@@ -226,3 +226,4 @@ void TestStateMachineRun(TestStatusType *status)
     PrepareForTest("Verify handler data params", status);
     CheckResult(TEST_MACHINE_NUM_CYCLES == cycles, __LINE__, status);
 }
+

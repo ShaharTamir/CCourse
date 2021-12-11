@@ -98,3 +98,4 @@ void StackEmptyStack(Stack *stack);
 int StackGetIndex(Stack *stack);
 
 #endif /* __STACK_H_CCOURSE_ */
+

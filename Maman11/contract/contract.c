@@ -84,3 +84,4 @@ int IsEnd(char note)
 {
     return '\0' == note || EOF == note;
 }
+
