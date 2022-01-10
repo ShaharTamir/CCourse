@@ -15,7 +15,7 @@ void LinkListDestroy(SLinkedList *list);
 /* push a new node to the beginning of the list */
 void LinkListPush(SLinkedList *list, SNode *node);
 
-/* count starts from 1 */
+/* count starts from 0 */
 void LinkListRemoveAt(SLinkedList *list, unsigned int index);
 
 /* remove the first node from list */

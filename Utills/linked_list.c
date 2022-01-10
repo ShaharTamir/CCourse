@@ -25,8 +25,10 @@ SLinkedList* LinkListCreate(SNode *node, size_t data_size)
         if(new_list->head)
         {
             new_list->head->data = NULL; /* tail is dummy */
-            new_list->head->next = node;
+            new_list->head->next = NULL;
             new_list->head->size = data_size; /* have to receive this if create empty list */
+
+            LinkListPush(new_list, node);
         }
         else
         {
@@ -45,7 +47,6 @@ void LinkListDestroy(SLinkedList *list)
         while(list->head->next)
         {
             LinkListPop(list);
-            printf("still popping\n");
         }
         
         free(list->head);
@@ -58,10 +59,18 @@ void LinkListDestroy(SLinkedList *list)
 
 void LinkListPush(SLinkedList *list, SNode *node)
 {
+    SNode *iter = NULL;
+
     if(list && node)
     {
-        node->next = list->head->next;
-        list->head->next = node;
+        iter = node;
+        while(iter->next)
+        {
+            iter = iter->next;
+        }
+
+        iter->next = list->head;
+        list->head = node;
     }
 }
 

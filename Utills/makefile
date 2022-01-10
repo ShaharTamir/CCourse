@@ -1,7 +1,8 @@
 STACK_OBJ = stack_tester.o
 STATE_OBJ = state_machine_tester.o
-FILES = stack.c state_machine.c test_input.c tester.c
-OBJECTS = stack.o state_machine.o test_input.o tester.o
+LIST_OBJ = linked_list_tester.o
+FILES = stack.c state_machine.c linked_list.c node.c test_input.c tester.c
+OBJECTS = stack.o state_machine.o linked_list.o node.o test_input.o tester.o
 FLAGS = -ansi -Wall -pedantic-errors
 
 dyn_lib: $(OBJECTS)
@@ -35,6 +36,13 @@ state_machine: lib $(STATE_OBJ)
 
 $(STATE_OBJ):
 	gcc -c $(FLAGS) state_machine_tester.c
+
+list: lib $(LIST_OBJ)
+	gcc -o linked_list.out $(LIST_OBJ) utills.a
+	mv $(LIST_OBJ) ./objects/$(LIST_OBJ)
+
+$(LIST_OBJ):
+	gcc -c $(FLAGS) linked_list_tester.c
 
 clean:
 	rm -f *.so

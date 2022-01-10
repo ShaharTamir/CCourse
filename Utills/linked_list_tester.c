@@ -28,7 +28,6 @@ void TestListCreate(TestStatusType* status)
 {
     SLinkedList* list = NULL;
     int size = 1;
-    int i = -1;
     char data[] = {"strings"};
 
     PrintTestSubject("CREATE SINGLE LINKED LIST");
@@ -44,12 +43,12 @@ void TestListCreate(TestStatusType* status)
     list = NULL;
 
     PrepareForTest("Create a full list, verify valgrind", status);
-    list = LinkListCreate(NodeCreate(size, &data[++i], 
-                          NodeCreate(size, &data[++i], 
-                          NodeCreate(size, &data[++i], 
-                          NodeCreate(size, &data[++i], 
-                          NodeCreate(size, &data[++i],
-                          NodeCreate(size, &data[++i], NULL)))))), size);
+    list = LinkListCreate(NodeCreate(size, &data[0], 
+                          NodeCreate(size, &data[1], 
+                          NodeCreate(size, &data[2], 
+                          NodeCreate(size, &data[3], 
+                          NodeCreate(size, &data[4],
+                          NodeCreate(size, &data[5], NULL)))))), size);
     CheckResult((list != NULL), __LINE__, status);
 
     LinkListDestroy(list);

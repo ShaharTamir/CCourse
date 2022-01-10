@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h> /* malloc, free */
 #include <string.h> /* memcpy */
 #include "node.h"
@@ -38,6 +39,7 @@ void NodeDestroy(SNode *node)
         {
             free(node->data);
             node->data = NULL;
+            printf("free!\n");
         }
 
         node->next = NULL;
