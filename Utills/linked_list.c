@@ -74,43 +74,64 @@ void LinkListPush(SLinkedList *list, SNode *node)
     }
 }
 
-void LinkListRemoveAt(SLinkedList *list, unsigned int index)
+void LinkListAppend(SLinkedList *list, SNode *node)
 {
-    int i = 0;
     SNode *iter = NULL;
+    SNode *node_iter = NULL;
+    if(list && node)
+    {
+
+        if(list->head->next)
+        {
+            iter = list->head;
+            
+            while(iter->next && iter->next->data) /* run to last node until behind tail (dummy) */
+            {
+                iter = iter->next;
+            }
+
+            node_iter = node;
+            while(node_iter->next)
+            {
+                node_iter = node_iter->next;
+            }
+
+            node_iter->next = iter->next; /* attach last of node to tail (dummy) */
+            iter->next = node; /* attach node behind tail to the beggining of new node part */
+        }
+        else
+        {
+            LinkListPush(list, node);
+        }
+    }
+}
+
+void LinkListRemove(SNode* node)
+{
     SNode temp;
 
-    if(list)
+    if(node)
     {
-        iter = list->head;
-        for(i = 0; i < index; ++i)
-        {
-            if(iter->next == NULL)
-                return;
-
-            iter = iter->next;
-        }
-
         /* if not dummy - swap and remove */
-        if(iter->next != NULL)
+        if(node->next != NULL)
         {
-            temp.data = iter->data;
-            temp.next = iter->next;
+            temp.data = node->data;
+            temp.next = node->next;
 
-            iter->data = iter->next->data;
-            iter->next->data = temp.data;
-            iter->next = iter->next->next;
+            node->data = node->next->data;
+            node->next->data = temp.data;
+            node->next = node->next->next;
 
             /* temp.next containing pointer to allocated SNode */
             NodeDestroy(temp.next);
-            printf("destoryed\n");
+            temp.next = NULL;
         }
     }
 }
 
 void LinkListPop(SLinkedList *list)
 {
-    LinkListRemoveAt(list, 0);
+    LinkListRemove(list->head);
 }
 
 int LinkListSize(SLinkedList *list)
@@ -135,18 +156,35 @@ SNode* LinkListFind(SLinkedList *list, void *data)
 {
     SNode *iter = NULL;
     
-    if(list)
+    if(list && data)
     {
        iter = list->head;
 
-       while(iter->next != NULL)
+       while(iter->next != NULL && iter->data)
        {
            if(0 == memcmp(iter->data, data, list->head->size))
            {
                return iter;
            }
+
+           iter = iter->next;
        }
     }
 
     return NULL;
+}
+
+void LinkListPrint(SLinkedList *list, PrintFunc print)
+{
+    SNode *iter = NULL;
+
+    if(list)
+    {
+        iter = list->head;
+        while(iter->next) /* not tail */
+        {
+            print(iter->data);
+            iter = iter->next;
+        }
+    }
 }

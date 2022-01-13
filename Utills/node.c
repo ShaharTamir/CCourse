@@ -17,6 +17,7 @@ SNode *NodeCreate(unsigned int size, void *data, SNode *next)
 
             if(new_node->data)
             {
+                new_node->size = size;
                 memcpy(new_node->data, data, size);
                 new_node->next = next;
             }
@@ -39,7 +40,6 @@ void NodeDestroy(SNode *node)
         {
             free(node->data);
             node->data = NULL;
-            printf("free!\n");
         }
 
         node->next = NULL;

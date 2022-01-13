@@ -15,13 +15,14 @@ void LinkListDestroy(SLinkedList *list);
 /* push a new node to the beginning of the list */
 void LinkListPush(SLinkedList *list, SNode *node);
 
-/* count starts from 0 */
-void LinkListRemoveAt(SLinkedList *list, unsigned int index);
+/* append a new node to the end of the list */
+void LinkListAppend(SLinkedList *list, SNode *node);
+
+/* remove node from list. If node is not from list - your problem */
+void LinkListRemove(SNode *node);
 
 /* remove the first node from list */
 void LinkListPop(SLinkedList *list);
-
-/*void LinkListPrint(SLinkedList *list, PrintFunc func);*/
 
 /* return num of nodes in list */
 int LinkListSize(SLinkedList *list);
@@ -31,5 +32,8 @@ SNode* LinkListGetAt(SLinkedList *list, int index);
 
 /* if not found return NULL */
 SNode* LinkListFind(SLinkedList *list, void *data);
+
+/* print list using a costume user defined function */
+void LinkListPrint(SLinkedList *list, PrintFunc func);
 
 #endif /* __LINKED_LIST_H__ */
