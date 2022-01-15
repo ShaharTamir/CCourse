@@ -27,9 +27,6 @@ void LinkListPop(SLinkedList *list);
 /* return num of nodes in list */
 int LinkListSize(SLinkedList *list);
 
-/* get node at index */
-SNode* LinkListGetAt(SLinkedList *list, int index);
-
 /* if not found return NULL */
 SNode* LinkListFind(SLinkedList *list, void *data);
 
