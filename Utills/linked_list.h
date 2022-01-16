@@ -6,9 +6,10 @@
 typedef struct _SLinkedList SLinkedList;
 
 typedef void (*PrintFunc)(void *);
+typedef int (*CompareFunc)(void *, void *, void *params);
 
 /* create a new list containing 'node' as it's head */
-SLinkedList* LinkListCreate(SNode *node, size_t data_size);
+SLinkedList* LinkListCreate(SNode *node, CompareFunc cmp_func);
 
 void LinkListDestroy(SLinkedList *list);
 
@@ -28,7 +29,7 @@ void LinkListPop(SLinkedList *list);
 int LinkListSize(SLinkedList *list);
 
 /* if not found return NULL */
-SNode* LinkListFind(SLinkedList *list, void *data);
+SNode* LinkListFind(SLinkedList *list, void *data, void *params);
 
 /* print list using a costume user defined function */
 void LinkListPrint(SLinkedList *list, PrintFunc func);

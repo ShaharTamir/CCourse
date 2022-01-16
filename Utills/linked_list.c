@@ -7,27 +7,25 @@
 struct _SLinkedList
 {
     SNode *head;
+    CompareFunc cmp_func;
 };
 
-SLinkedList* LinkListCreate(SNode *node, size_t data_size)
+SLinkedList* LinkListCreate(SNode *node, CompareFunc cmp_func)
 {
     SLinkedList *new_list = NULL;
-
-    if(0 == data_size)
+    
+    if(cmp_func == NULL)
         return NULL;
-        
+
     new_list = (SLinkedList*)malloc(sizeof(SLinkedList));
 
     if(new_list)
     {
-        new_list->head = (SNode*)malloc(sizeof(SNode));
+        new_list->head = NodeCreate(NULL, NULL);
         
         if(new_list->head)
         {
-            new_list->head->data = NULL; /* tail is dummy */
-            new_list->head->next = NULL;
-            new_list->head->size = data_size; /* have to receive this if create empty list */
-
+            new_list->cmp_func = cmp_func;
             LinkListPush(new_list, node);
         }
         else
@@ -51,6 +49,7 @@ void LinkListDestroy(SLinkedList *list)
         
         free(list->head);
         list->head = NULL;
+        list->cmp_func = NULL;
 
         free(list);
         list = NULL;
@@ -152,7 +151,7 @@ int LinkListSize(SLinkedList *list)
     return count;
 }
 
-SNode* LinkListFind(SLinkedList *list, void *data)
+SNode* LinkListFind(SLinkedList *list, void *data, void *params)
 {
     SNode *iter = NULL;
     
@@ -162,7 +161,7 @@ SNode* LinkListFind(SLinkedList *list, void *data)
 
        while(iter->next != NULL && iter->data)
        {
-           if(0 == memcmp(iter->data, data, list->head->size))
+           if(0 == list->cmp_func(iter->data, data, params))
            {
                return iter;
            }

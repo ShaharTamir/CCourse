@@ -3,12 +3,11 @@
 
 typedef struct SNode
 {
-    unsigned int size;
     void *data;
     struct SNode *next;
 } SNode;
 
-SNode* NodeCreate(unsigned int size, void *data, SNode *next);
+SNode* NodeCreate(void *data, SNode *next);
 
 void NodeDestroy(SNode *node);
 
