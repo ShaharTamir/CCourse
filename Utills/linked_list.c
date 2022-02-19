@@ -159,7 +159,7 @@ SNode* LinkListFind(SLinkedList *list, void *data, void *params)
     {
        iter = list->head;
 
-       while(iter->next != NULL && iter->data)
+       while(iter->next != NULL)
        {
            if(0 == list->cmp_func(iter->data, data, params))
            {
@@ -168,6 +168,25 @@ SNode* LinkListFind(SLinkedList *list, void *data, void *params)
 
            iter = iter->next;
        }
+    }
+
+    return NULL;
+}
+
+SNode* LinkListForEach(SLinkedList *list, ActionFunc action, void *params)
+{
+    SNode *iter = NULL;
+
+    if(list)
+    {
+        iter = list->head;
+        while(iter->next) /* not tail */
+        {
+            if(!action(iter->data, params))
+                return iter;
+
+            iter = iter->next;        
+        }
     }
 
     return NULL;
@@ -186,4 +205,22 @@ void LinkListPrint(SLinkedList *list, PrintFunc print)
             iter = iter->next;
         }
     }
+}
+
+SNode *LinkListGetTail(SLinkedList *list)
+{
+    SNode *iter = NULL;
+    SNode *node_iter = NULL;
+    
+    if(list && list->head->next)
+    {
+        iter = list->head;
+            
+        while(iter->next && iter->next->data) /* run to last node until behind tail (dummy) */
+        {
+            iter = iter->next;
+        }
+    }
+
+    return iter;   
 }

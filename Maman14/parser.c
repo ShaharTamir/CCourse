@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* malloc, free */
+#include <string.h> /* memcpy */
+#include <ctype.h> /* isspace */
 
 #include <state_machine.h>
 #include "parser.h"
@@ -43,6 +45,7 @@ SParser* ParserCreate(FILE* input, void *data, \
     /* init state machine data */
     params->line_len = max_line_len;
     params->bytes_read = 0;
+    params->line_count = 0;
     params->line_index = 0;
     params->user_data = data;
     params->input = input;
@@ -96,6 +99,48 @@ void ParserDestroy(SParser* parser)
 int ParserAddState(SParser *parser, int state_index, StateHandler handler)
 {
     return StateMachineAddState(parser->machine, state_index, handler);
+}
+
+void ParserSetLineParseFunc(SParser *parser, ParseFunction new_line_func)
+{
+    /* if machine data is not initiated - seg fault. user responsibility. */
+    if(parser && new_line_func)
+    {
+        ((SParserParams*)parser->machine_data->params)->line_parse_func = new_line_func;
+    }
+}
+
+char *ParserNextWord(SParserParams *data)
+{
+    int word_len = 0;
+    char *new_word = NULL;
+
+    /* skip all white spaces before word */
+    while(data->line_index != data->bytes_read 
+        && isspace(data->line[data->line_index]))
+    {
+        ++data->line_index;
+    }
+
+    /* find word length */
+    while(data->line_index != data->bytes_read 
+        && !isspace(data->line[data->line_index]))
+    {
+        ++data->line_index;
+        ++word_len;
+    }
+
+    if(word_len)
+    {
+        new_word = (char *)malloc(word_len + 1);
+        if(new_word)
+        {
+            /* copy word from line into new_word */
+            memcpy(new_word, &data->line[data->line_index - word_len], word_len);
+        }
+    }
+
+    return new_word;
 }
 
 int ParserRun(SParser *parser)
@@ -163,6 +208,8 @@ int HandleReadLines(StateMachineData* data)
     {
         return FINISH_READ;
     }
+
+    ++parser_data->line_count;
 
     return PARSE_LINE;
 }

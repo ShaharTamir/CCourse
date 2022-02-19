@@ -43,6 +43,7 @@ typedef enum
 typedef struct
 {
     int bytes_read;
+    int line_count;
     int line_index;
     size_t line_len;
     void *user_data;
@@ -93,6 +94,22 @@ void ParserDestroy(SParser *parser);
  *  PARSER_FAIL or PARSER_SUCCESS according to the process status.
 */
 int ParserAddState(SParser *parser, int state_index, StateHandler handler);
+
+/* ParserSetLineParseFunc:
+ *  This functions sets the parsing function conducted over each line
+ *  during the parsing process.
+ *  
+ * params:
+ *  parser - to set its function.
+ *  new_line_function - ...
+ * 
+ * return:
+ *  None.
+*/
+void ParserSetLineParseFunc(SParser *parser, ParseFunction new_line_func);
+
+
+char *ParserNextWord(SParserParams *data);
 
 /* ParserRun:
  *  This function runs the parser state machine. It will stop when reaching the FINISH_READ state
