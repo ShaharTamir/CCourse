@@ -116,15 +116,16 @@ char *ParserNextWord(SParserParams *data)
     char *new_word = NULL;
 
     /* skip all white spaces before word */
-    while(data->line_index != data->bytes_read 
+    while(data->line_index < data->bytes_read 
         && isspace(data->line[data->line_index]))
     {
         ++data->line_index;
     }
 
     /* find word length */
-    while(data->line_index != data->bytes_read 
-        && !isspace(data->line[data->line_index]))
+    while(data->line_index < data->bytes_read 
+        && !isspace(data->line[data->line_index]) 
+        && data->line[data->line_index] != '\0')
     {
         ++data->line_index;
         ++word_len;
@@ -141,6 +142,23 @@ char *ParserNextWord(SParserParams *data)
     }
 
     return new_word;
+}
+
+void ParserMoveToLineNumber(SParserParams* params, int line_number)
+{
+    size_t dummy;
+    char *dummy_line;
+    int i = 0;
+    
+    dummy_line = malloc(params->line_len);
+    
+    fseek(params->input, 0, SEEK_SET);
+    for(i = 0; i < line_number; ++i)
+    {
+        getline(&dummy_line, &dummy, params->input);
+    }
+
+    free(dummy_line);
 }
 
 int ParserRun(SParser *parser)
@@ -200,7 +218,6 @@ int HandleReadLines(StateMachineData* data)
     SParserParams *parser_data = NULL;
     
     parser_data = (SParserParams*)data->params; /* assign ptr to local var to ease access to parser data */
-
     parser_data->line_index = 0;
     parser_data->bytes_read = getline(&parser_data->line, &parser_data->line_len, parser_data->input);
 

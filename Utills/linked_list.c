@@ -210,7 +210,6 @@ void LinkListPrint(SLinkedList *list, PrintFunc print)
 SNode *LinkListGetTail(SLinkedList *list)
 {
     SNode *iter = NULL;
-    SNode *node_iter = NULL;
     
     if(list && list->head->next)
     {

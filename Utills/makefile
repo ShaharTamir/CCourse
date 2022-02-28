@@ -3,10 +3,10 @@ STATE_OBJ = state_machine_tester.o
 LIST_OBJ = linked_list_tester.o
 FILES = stack.c state_machine.c linked_list.c node.c test_input.c tester.c
 OBJECTS = stack.o state_machine.o linked_list.o node.o test_input.o tester.o
-FLAGS = -ansi -Wall -pedantic-errors
+FLAGS = -g -ansi -Wall -pedantic-errors
 
 dyn_lib: $(OBJECTS)
-	gcc -g -shared $(FLAGS) $(OBJECTS) -o utills.so
+	gcc -shared $(FLAGS) $(OBJECTS) -o utills.so
 	mkdir -p ./objects
 	for i in $(OBJECTS); do \
 		mv $$i ./objects/$$i; \

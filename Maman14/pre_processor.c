@@ -52,16 +52,15 @@ int SetMacroEnd(StateMachineData *data);
 /********************************
  *      Service Functions       *
  *******************************/
-int InitPreProcessor(SParser** parser, SLinkedList** macro_list);
+int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProcessorData** proc_data);
 void DestroyPreProcessor();
 
-FILE* RunPreProcessor(FILE *in, char *file_name)
+char* RunPreProcessor(FILE *in, char *file_name)
 {
     char parsed_finish[] = ".am";
     SParser *parser = NULL;
     SProcessorData *proc_data = NULL;
     char *parsed_file_name = NULL;
-    FILE *out_file = NULL;
 
     parsed_file_name = (char *)malloc(strlen(file_name) + sizeof(parsed_finish) + 1); /* + 1 = '\0' */
 
@@ -84,11 +83,11 @@ FILE* RunPreProcessor(FILE *in, char *file_name)
     return parsed_file_name;
 }
 
-int ListStringCompare(void *str_a, void *str_b, void *params)
+int ListStringCompare(void *macro, void *str_b, void *params)
 {    
     (void) params;
 
-    return strcmp(str_a, str_b);
+    return strcmp((char *)(((SMacroType*)macro)->name), (char *)str_b);
 }
 
 int CheckForMacro(StateMachineData* data)
@@ -110,10 +109,10 @@ int CheckForMacro(StateMachineData* data)
         {
             data->val = curr_word; /* update current word */
 
-            if(!memcmp(curr_word, macro_string, sizeof(macro_string)))
+            if(!p_data->in_macro && !strcmp(curr_word, macro_string))
                 return NEW_MACRO; /* addMacroToList */
 
-            if(!memcmp(curr_word, end_macro_string, sizeof(macro_string)))
+            if(p_data->in_macro && !strcmp(curr_word, end_macro_string))
                 return END_MACRO; /* setMacroEnd */
 
             if(NULL != LinkListFind(p_data->macro_list, curr_word, NULL))
@@ -121,7 +120,7 @@ int CheckForMacro(StateMachineData* data)
         }
     }
 
-    fprintf(p_data->parsed_file, p_params->line);
+    fprintf(p_data->parsed_file, "%s", p_params->line);
 
     return READ_NEW_LINE;
 }
@@ -135,9 +134,7 @@ int AddMacroToList(StateMachineData* data)
     new_macro = (SMacroType*)malloc(sizeof(SMacroType));
 
     if(new_macro)
-    {
-        int name_length;
-        
+    {        
         p_params = (SParserParams*)data->params;
         p_data = (SProcessorData*)p_params->user_data;
         new_macro->start_line = p_params->line_count;
@@ -146,8 +143,10 @@ int AddMacroToList(StateMachineData* data)
         
         if(!new_macro->name)
         {
-            printf("something went wrong - input is invalid or allocation fail!\n");
-            return FINISH_READ;
+            /* not macro */
+            free(new_macro);
+            fprintf(p_data->parsed_file, "%s", p_params->line);
+            return READ_NEW_LINE;
         }
 
         data->val = new_macro->name;
@@ -160,7 +159,7 @@ int AddMacroToList(StateMachineData* data)
         return FINISH_READ;
     }
 
-    return PARSE_LINE;
+    return READ_NEW_LINE;
 }
 
 int SpreadMacro(StateMachineData *data)
@@ -168,15 +167,24 @@ int SpreadMacro(StateMachineData *data)
     SParserParams *p_params = NULL;
     SProcessorData *p_data = NULL;
     SMacroType *macro = NULL;
+    int i = 0;
 
     p_params = (SParserParams*)data->params;
     p_data = (SProcessorData*)p_params->user_data;
-    macro = (SMacroType*)LinkListFind(p_data->macro_list, (char *)data->val, NULL);
+    macro = (SMacroType*)(LinkListFind(p_data->macro_list, (char *)data->val, NULL)->data); /* no need to check because found in CheckForMacro */
 
-    /*
-        move line pointer to the starting line of the macro.
-        update line counter to line of macro. 
-    */
+    /* move in file to the starting line of the macro */
+    ParserMoveToLineNumber(p_params, macro->start_line);
+    
+    /* print all macro lines straight into output file */
+    for(i = 0; i < macro->end_line - macro->start_line; ++i)
+    {
+        getline(&p_params->line, &p_params->line_len, p_params->input);
+        fprintf(p_data->parsed_file, "%s", p_params->line);
+    }
+
+    /* move back to previous point in file */
+    ParserMoveToLineNumber(p_params, p_params->line_count);
 
    return READ_NEW_LINE;
 }
@@ -191,7 +199,7 @@ int SetMacroEnd(StateMachineData *data)
     p_data = (SProcessorData*)p_params->user_data;
     last_macro = (SMacroType*)(LinkListGetTail(p_data->macro_list)->data);
 
-    last_macro->end_line = p_params->line_count;
+    last_macro->end_line = p_params->line_count - 1;
     p_data->in_macro = FALSE;
 
 
@@ -200,7 +208,6 @@ int SetMacroEnd(StateMachineData *data)
 
 int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProcessorData** proc_data)
 {
-    char *parsed_file_name = NULL;
     int ok = PARSER_SUCCESS;
 
     *proc_data = (SProcessorData *)malloc(sizeof(SProcessorData));
@@ -219,13 +226,14 @@ int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProce
         return PARSER_FAIL;
 
     (*proc_data)->curr_line_index = 0;
-    *parser = ParserCreate(in, proc_data, CheckForMacro, PROCESSOR_NUM_STATES, MAX_LINE_LENGTH);
+    *parser = ParserCreate(in, *proc_data, CheckForMacro, PROCESSOR_NUM_STATES, MAX_LINE_LENGTH);
 
     if(!*parser)
         return PARSER_FAIL;
 
     ok &= ParserAddState(*parser, NEW_MACRO, AddMacroToList);
     ok &= ParserAddState(*parser, MACRO_EXIST, SpreadMacro);
+    ok &= ParserAddState(*parser, END_MACRO, SetMacroEnd);
 
     return ok;
 }

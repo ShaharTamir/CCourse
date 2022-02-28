@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
                 processed_input = fopen(processed_input_name, "r");
                 if(processed_input)
                 {
-                    RunAssembler(processed_input);
+                    /*RunAssembler(processed_input);*/
+                    printf("success\n");
                     fclose(processed_input);
                 }
                 else {}

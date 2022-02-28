@@ -111,6 +111,8 @@ void ParserSetLineParseFunc(SParser *parser, ParseFunction new_line_func);
 
 char *ParserNextWord(SParserParams *data);
 
+void ParserMoveToLineNumber(SParserParams* params, int line_number);
+
 /* ParserRun:
  *  This function runs the parser state machine. It will stop when reaching the FINISH_READ state
  *  or if sent STATE_MACHINE_END_STATE state (see state_machine.h).
