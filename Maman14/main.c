@@ -3,7 +3,7 @@
 
 /* sw */
 #include "pre_processor.h"
-/*#include "assembler.h"*/
+#include "assembler.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
                 processed_input = fopen(processed_input_name, "r");
                 if(processed_input)
                 {
-                    /*RunAssembler(processed_input);*/
+                    RunAssembler(processed_input, argv[1]);
                     printf("success\n");
                     fclose(processed_input);
                 }

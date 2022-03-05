@@ -53,7 +53,7 @@ int SetMacroEnd(StateMachineData *data);
  *      Service Functions       *
  *******************************/
 int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProcessorData** proc_data);
-void DestroyPreProcessor();
+void DestroyPreProcessor(SParser *parser, SProcessorData *proc_data);
 
 char* RunPreProcessor(FILE *in, char *file_name)
 {
@@ -75,10 +75,16 @@ char* RunPreProcessor(FILE *in, char *file_name)
         }
         else 
         {
+            free(parsed_file_name);
+            parsed_file_name = NULL;
+
+            DestroyPreProcessor(parser, proc_data);
             printf("init pre processor fail!\n");
             exit(1);
         } 
     }
+
+    DestroyPreProcessor(parser, proc_data);
 
     return parsed_file_name;
 }
@@ -236,4 +242,22 @@ int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProce
     ok &= ParserAddState(*parser, END_MACRO, SetMacroEnd);
 
     return ok;
+}
+
+void DestroyPreProcessor(SParser *parser, SProcessorData *proc_data)
+{  
+    if(parser)
+    {
+        ParserDestroy(parser);
+        parser =  NULL;
+    }
+    if(proc_data)
+    {
+        if(proc_data->macro_list)
+        {
+            LinkListDestroy(proc_data->macro_list);
+            free(proc_data);
+            proc_data = NULL;
+        }
+    }
 }
