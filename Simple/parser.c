@@ -112,11 +112,7 @@ int ParserValidateName(char *name)
 
     len = strlen(name);
 
-    if(len > MAX_LABEL_NAME)
-    {
-        printf("%serror: label name too long.%s", CLR_RED, CLR_WHT);
-    }
-    else
+    if(len < MAX_LABEL_NAME)
     {
         valid_len = name[len - 1] == LABEL_DEF ? len - 1 : len;
 
@@ -129,10 +125,6 @@ int ParserValidateName(char *name)
         {
             name[i] = DELIMITER;
             ret_val = !ParserIsFunction(name) && !ParserIsRegister(name);
-        }
-        else
-        {
-            printf("%serror: label name is invalid.%s", CLR_RED, CLR_WHT);
         }
     }
 
