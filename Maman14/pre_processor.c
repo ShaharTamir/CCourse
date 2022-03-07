@@ -2,16 +2,13 @@
 #include <stdio.h>   /* FILE type */
 #include <string.h> /* strcmp,  */
 #include <stdlib.h> /* malloc, free */
-#include <node.h>
 
+#include <node.h>
 #include <linked_list.h>
 
 #include "basic_defs.h"
 #include "parser.h"
 #include "pre_processor.h"
-
-#define FALSE 0
-#define TRUE 1
 
 typedef enum
 {

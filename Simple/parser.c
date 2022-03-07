@@ -86,7 +86,7 @@ int ParserIsRegister(char *word)
     return FALSE;
 }
 
-void ParserNextWord(char *line, char *word, int curr_index, int line_len)
+int ParserNextWord(char *line, char *word, int curr_index, int line_len)
 {
     int i = 0;
 
@@ -101,6 +101,8 @@ void ParserNextWord(char *line, char *word, int curr_index, int line_len)
     }
 
     word[i] = DELIMITER;
+
+    return curr_index;
 }
 
 int ParserValidateName(char *name)

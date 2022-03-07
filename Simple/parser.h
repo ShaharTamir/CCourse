@@ -12,8 +12,8 @@ int ParserIsLineNote(char *line, int line_len);
 /* return TRUE if next word is a function */
 int ParserIsFunction(char *word);
 
-/* extract next word from line */
-void ParserNextWord(char *line, char *word, int curr_index, int line_len);
+/* extract next word from line. return the updated curr_index */
+int ParserNextWord(char *line, char *word, int curr_index, int line_len);
 
 /* 
 verify name is not a function and that contains only alphabet characters.

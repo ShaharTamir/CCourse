@@ -17,7 +17,7 @@ typedef struct
 
 SFunctions *g_func_names[] = { {0, 0, "mov"}, {1, 0, "cmp"}, {2, 10, "add"}, {2, 11, "sub"}, {4, 0, "lea"}, {5, 10, "clr"}, \
      {5, 11, "not"}, {5, 12, "inc"}, {5, 13, "dec"}, {9, 10, "jmp"}, {9, 11, "bne"}, {9, 12, "jsr"}, {12, 0, "red"}, \
-     {13, 0, "prn"}, {14, 0, "rts"}, {15, 0, "stop"}, {0, 0, "macro"} };
+     {13, 0, "prn"}, {14, 0, "rts"}, {15, 0, "stop"}};
 
 char *g_instructions[] = { ".data", ".string", ".extern", ".entry"};
 
