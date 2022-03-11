@@ -1,89 +1,230 @@
 #define _GNU_SOURCE
-#include <stdio.h>   /* FILE type */
-#include <string.h> /* strcmp,  */
+#include <stdio.h> /* FILE, printf, fprintf */
 #include <stdlib.h> /* malloc, free */
-
-#include <node.h>
-#include <linked_list.h>
+#include <string.h> /* memset, strcpy */
 
 #include "basic_defs.h"
+#include "file_handler.h"
+#include "linked_list.h"
 #include "parser.h"
+#include "macro.h"
 #include "pre_processor.h"
 
-typedef enum
-{
-    NEW_MACRO = DEFAULT_NUM_STATES,
-    MACRO_EXIST,
-    END_MACRO,
-    PROCESSOR_NUM_STATES
-} EPreProcessStates;
-
 typedef struct 
 {
-    int start_line;
-    int end_line;
-    char *name;
-} SMacroType;
-
-typedef struct 
-{
-    int in_macro;
-    int curr_line_index;
+    FILE *out;
     SLinkedList *macro_list;
-    FILE *parsed_file;
-} SProcessorData;
+    char *line;
+    char *word;
+    size_t line_len;
+    int bytes_read;
+    int index;
+    int line_count;
+    int ignore_line;
+    int status;
+}SPreProcData;
 
-/********************************
- *  LinkList compare function   *
-********************************/
-int ListStringCompare(void *str_a, void *str_b, void *);
+static int InitPreProc(SPreProcData *data, char *file_name);
+static void DestroyPreProc(SPreProcData *data);
+static int FindMacroLogic(FILE *in, SPreProcData *data);
+static int AddMacroToList(SPreProcData *data);
+static void SpreadMacro(FILE *in, SPreProcData *data, SMacroType *macro);
+static int SetMacroEnd(FILE *in, SPreProcData *data);
+static int ListStringCompare(void *macro, void *str_b, void *params);
 
-/********************************
- * Pre Processor State Handlers *
- *******************************/
-int CheckForMacro(StateMachineData *data);
-int AddMacroToList(StateMachineData *data);
-int SpreadMacro(StateMachineData *data);
-int SetMacroEnd(StateMachineData *data);
+typedef int (*PreProcFunc)(FILE *in, SPreProcData *data);
+static const PreProcFunc pre_proc_states_func[] = {FindMacroLogic, SetMacroEnd};
 
-/********************************
- *      Service Functions       *
- *******************************/
-int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProcessorData** proc_data);
-void DestroyPreProcessor(SParser *parser, SProcessorData *proc_data);
-
-char* RunPreProcessor(FILE *in, char *file_name)
+int RunPreProcessor(FILE *in, char *file_name)
 {
-    char parsed_finish[] = ".am";
-    SParser *parser = NULL;
-    SProcessorData *proc_data = NULL;
-    char *parsed_file_name = NULL;
-
-    parsed_file_name = (char *)malloc(strlen(file_name) + sizeof(parsed_finish) + 1); /* + 1 = '\0' */
-
-    if(parsed_file_name)
+    SPreProcData data;
+    int is_macro = FALSE;
+    
+    if(InitPreProc(&data, file_name))
     {
-        strcpy(parsed_file_name, file_name);
-        strcat(parsed_file_name, parsed_finish);
-        
-        if(InitPreProcessor(in, parsed_file_name, &parser, &proc_data))
+        while(data.bytes_read != EOF && data.status == TRUE)
         {
-            ParserRun(parser);
-        }
-        else 
-        {
-            free(parsed_file_name);
-            parsed_file_name = NULL;
+            ++data.line_count;
+            data.bytes_read = getline(&data.line, &data.line_len, in);
+            data.ignore_line = is_macro; /* to handle 'endm' */
+            
+            if(!ParserIsLineNote(data.line, data.bytes_read))
+            {
+                for(data.index = 0 ; data.index < data.bytes_read; ++data.index)
+                {
+                    data.index = ParserNextWord(data.line, data.word, data.index, data.bytes_read);
+                    is_macro = pre_proc_states_func[is_macro](in, &data);
+                }
 
-            DestroyPreProcessor(parser, proc_data);
-            printf("init pre processor fail!\n");
-            exit(1);
-        } 
+                if(!is_macro && !data.ignore_line)
+                    fprintf(data.out, "%s", data.line);
+            }
+        }
+    }
+    
+    DestroyPreProc(&data);
+
+    return data.status;
+}
+
+int InitPreProc(SPreProcData *data, char *file_name)
+{
+    char *proc_file_name = NULL;
+    int ret_val = FALSE;
+
+    data->line = (char *)malloc(MAX_LINE_LENGTH);
+    if(data->line)
+    {
+        data->word = (char *)malloc(MAX_LABEL_NAME);
+        if(data->word)
+        {
+            proc_file_name = GetFileName(file_name, STAGE_PRE_PROC); /* uses malloc */  
+            if(proc_file_name)
+            {
+                data->macro_list = LinkListCreate(NULL, ListStringCompare);
+                if(data->macro_list)
+                {
+                    data->out = OpenFile(proc_file_name, "w");
+                    if(data->out)
+                    {
+                        memset(data->line, 0, MAX_LINE_LENGTH);
+                        memset(data->word, 0, MAX_LABEL_NAME);
+                        data->line_len = MAX_LINE_LENGTH;
+                        data->bytes_read = data->line_count = 0;
+                        data->ignore_line = FALSE;
+                        data->status = TRUE;
+                        ret_val = TRUE;
+                    }
+                }
+                
+                free(proc_file_name);
+                proc_file_name = NULL;
+            }    
+        }
     }
 
-    DestroyPreProcessor(parser, proc_data);
+    return ret_val;
+}
 
-    return parsed_file_name;
+void DestroyPreProc(SPreProcData *data)
+{
+    if(data)
+    {
+        if(data->line)
+        {
+            free(data->line);
+            data->line = NULL;
+        }
+        if(data->word)
+        {
+            free(data->word);
+            data->word = NULL;
+        }
+        if(data->out)
+        {
+            fclose(data->out);
+        }
+        if(data->macro_list)
+        {
+            LinkListForEach(data->macro_list, MacroDestroyWrapper, NULL); /* release all allocations for macro names */
+            LinkListDestroy(data->macro_list);
+            data->macro_list = NULL;
+        }
+    }
+}
+
+int FindMacroLogic(FILE *in, SPreProcData *data)
+{
+    const char *macro_str = "macro";
+    int ret_val = FALSE;
+    SNode *iter;
+
+    if(!strcmp(data->word, macro_str)) /* new macro definition */
+    {
+        data->index = ParserNextWord(data->line, data->word, data->index, data->bytes_read);
+        
+        if(ParserValidateName(data->word))
+        {
+            if(NULL == LinkListFind(data->macro_list, data->word, NULL))
+            {
+                ret_val = TRUE;
+                if(!AddMacroToList(data))
+                    printf("DEBUG: something went wrong %d\n", __LINE__);
+            }
+            else
+            {
+                data->status = FALSE;
+                printf("%serror: macro name in line: %s%d%s is already defined%s\n", \
+                    CLR_RED, CLR_YEL, data->line_count, CLR_RED, CLR_WHT);
+            }
+        }
+        else
+        {
+            data->status = FALSE;
+            printf("%serror: invalid macro name in line: %s%d%s\n", \
+                CLR_RED, CLR_YEL, data->line_count, CLR_WHT);
+        }
+    }
+    else if(NULL != (iter = LinkListFind(data->macro_list, data->word, NULL)))
+    {
+        SpreadMacro(in, data, iter->data);
+        data->ignore_line = TRUE;
+    }
+
+    return ret_val;
+}
+
+int AddMacroToList(SPreProcData *data)
+{
+    SMacroType *new_macro = NULL;
+
+    new_macro = MacroCreate(MAX_LABEL_NAME);
+
+    if(!new_macro)
+    {
+        return FALSE;
+    }
+
+    new_macro->start_line = data->line_count;
+    strcpy(new_macro->name, data->word);
+
+    LinkListAppend(data->macro_list, NodeCreate(new_macro, NULL));
+
+    return TRUE;
+}
+
+void SpreadMacro(FILE *in, SPreProcData *data, SMacroType *macro)
+{
+    int i = 0;
+
+    /* move in file to the starting line of the macro */
+    ParserMoveToLineNumber(in, MAX_LINE_LENGTH, macro->start_line);
+    
+    /* print all macro lines straight into output file */
+    for(i = 0; i < macro->end_line - macro->start_line; ++i)
+    {
+        getline(&data->line, &data->line_len, in);
+        fprintf(data->out, "%s", data->line);
+    }
+
+    /* move back to previous point in file */
+    ParserMoveToLineNumber(in, MAX_LINE_LENGTH, data->line_count);
+}
+
+int SetMacroEnd(FILE *in, SPreProcData *data)
+{
+    const char *macro_end_str = "endm";
+    SMacroType *last_macro = NULL;
+
+    if(!strcmp(data->word, macro_end_str))
+    {
+        last_macro = (SMacroType*)(LinkListGetTail(data->macro_list)->data);
+        last_macro->end_line = data->line_count - 1;
+
+        return FALSE;
+    }
+
+    return TRUE;  
 }
 
 int ListStringCompare(void *macro, void *str_b, void *params)
@@ -91,170 +232,4 @@ int ListStringCompare(void *macro, void *str_b, void *params)
     (void) params;
 
     return strcmp((char *)(((SMacroType*)macro)->name), (char *)str_b);
-}
-
-int CheckForMacro(StateMachineData* data)
-{
-    char macro_string[] = "macro";
-    char end_macro_string[] = "endm";
-    char *curr_word = NULL;
-    SParserParams *p_params = NULL;
-    SProcessorData *p_data = NULL;
-
-    p_params = (SParserParams*)data->params;
-    p_data = (SProcessorData*)p_params->user_data;
-
-    while(p_params->bytes_read != p_params->line_index)
-    {
-        curr_word = ParserNextWord(p_params);
-        
-        if(curr_word)
-        {
-            data->val = curr_word; /* update current word */
-
-            if(!p_data->in_macro && !strcmp(curr_word, macro_string))
-                return NEW_MACRO; /* addMacroToList */
-
-            if(p_data->in_macro && !strcmp(curr_word, end_macro_string))
-                return END_MACRO; /* setMacroEnd */
-
-            if(NULL != LinkListFind(p_data->macro_list, curr_word, NULL))
-                return MACRO_EXIST; /* spreadMacro */
-        }
-    }
-
-    fprintf(p_data->parsed_file, "%s", p_params->line);
-
-    return READ_NEW_LINE;
-}
-
-int AddMacroToList(StateMachineData* data)
-{
-    SParserParams *p_params = NULL;
-    SProcessorData *p_data = NULL;
-    SMacroType *new_macro = NULL;
-
-    new_macro = (SMacroType*)malloc(sizeof(SMacroType));
-
-    if(new_macro)
-    {        
-        p_params = (SParserParams*)data->params;
-        p_data = (SProcessorData*)p_params->user_data;
-        new_macro->start_line = p_params->line_count;
-        
-        new_macro->name = ParserNextWord(p_params);
-        
-        if(!new_macro->name)
-        {
-            /* not macro */
-            free(new_macro);
-            fprintf(p_data->parsed_file, "%s", p_params->line);
-            return READ_NEW_LINE;
-        }
-
-        data->val = new_macro->name;
-        LinkListAppend(p_data->macro_list, NodeCreate(new_macro, NULL));
-        p_data->in_macro = TRUE;
-    }
-    else
-    {
-        printf("cannot allocate new macro\n");
-        return FINISH_READ;
-    }
-
-    return READ_NEW_LINE;
-}
-
-int SpreadMacro(StateMachineData *data)
-{
-    SParserParams *p_params = NULL;
-    SProcessorData *p_data = NULL;
-    SMacroType *macro = NULL;
-    int i = 0;
-
-    p_params = (SParserParams*)data->params;
-    p_data = (SProcessorData*)p_params->user_data;
-    macro = (SMacroType*)(LinkListFind(p_data->macro_list, (char *)data->val, NULL)->data); /* no need to check because found in CheckForMacro */
-
-    /* move in file to the starting line of the macro */
-    ParserMoveToLineNumber(p_params, macro->start_line);
-    
-    /* print all macro lines straight into output file */
-    for(i = 0; i < macro->end_line - macro->start_line; ++i)
-    {
-        getline(&p_params->line, &p_params->line_len, p_params->input);
-        fprintf(p_data->parsed_file, "%s", p_params->line);
-    }
-
-    /* move back to previous point in file */
-    ParserMoveToLineNumber(p_params, p_params->line_count);
-
-   return READ_NEW_LINE;
-}
-
-int SetMacroEnd(StateMachineData *data)
-{
-    SParserParams *p_params = NULL;
-    SProcessorData *p_data = NULL;
-    SMacroType *last_macro = NULL;
-
-    p_params = (SParserParams*)data->params;
-    p_data = (SProcessorData*)p_params->user_data;
-    last_macro = (SMacroType*)(LinkListGetTail(p_data->macro_list)->data);
-
-    last_macro->end_line = p_params->line_count - 1;
-    p_data->in_macro = FALSE;
-
-
-    return READ_NEW_LINE;
-}
-
-int InitPreProcessor(FILE * in, char *parsed_file_name, SParser** parser, SProcessorData** proc_data)
-{
-    int ok = PARSER_SUCCESS;
-
-    *proc_data = (SProcessorData *)malloc(sizeof(SProcessorData));
-
-    if(!*proc_data)
-        return PARSER_FAIL;
-    
-    (*proc_data)->macro_list = LinkListCreate(NULL, ListStringCompare);
-
-    if(!(*proc_data)->macro_list)
-        return PARSER_FAIL;
-
-    (*proc_data)->parsed_file = fopen(parsed_file_name, "w");
-    
-    if(!(*proc_data)->parsed_file)
-        return PARSER_FAIL;
-
-    (*proc_data)->curr_line_index = 0;
-    *parser = ParserCreate(in, *proc_data, CheckForMacro, PROCESSOR_NUM_STATES, MAX_LINE_LENGTH);
-
-    if(!*parser)
-        return PARSER_FAIL;
-
-    ok &= ParserAddState(*parser, NEW_MACRO, AddMacroToList);
-    ok &= ParserAddState(*parser, MACRO_EXIST, SpreadMacro);
-    ok &= ParserAddState(*parser, END_MACRO, SetMacroEnd);
-
-    return ok;
-}
-
-void DestroyPreProcessor(SParser *parser, SProcessorData *proc_data)
-{  
-    if(parser)
-    {
-        ParserDestroy(parser);
-        parser =  NULL;
-    }
-    if(proc_data)
-    {
-        if(proc_data->macro_list)
-        {
-            LinkListDestroy(proc_data->macro_list);
-            free(proc_data);
-            proc_data = NULL;
-        }
-    }
 }

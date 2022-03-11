@@ -1,7 +1,7 @@
 LIB = utills.so
 LIB_FOLDER = ../Utills/
-FILES = pre_processor.c parser.c main.c
-OBJECTS = pre_processor.o parser.o main.o
+FILES = basic_defs.c label.c file_handler.c macro.c pre_processor.c parser.c main.c
+OBJECTS = basic_defs.o label.o file_handler.o macro.o pre_processor.o parser.o main.o
 GCC_FLAGS = -ansi -Wall -pedantic-errors -g
 PRODUCT = parser
 

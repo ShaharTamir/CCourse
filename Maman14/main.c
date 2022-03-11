@@ -1,41 +1,50 @@
 /* std */
 #include <stdio.h> /* fopen, fclose */
-
+#include <stdlib.h>
 /* sw */
+#include "basic_defs.h"
+#include "file_handler.h"
 #include "pre_processor.h"
-#include "assembler.h"
+/*#include "assembler.h"*/
 
 int main(int argc, char *argv[])
 {
     FILE* input = NULL;
-    char* processed_input_name = NULL;
-    FILE* processed_input = NULL;
+    char* file_name = NULL;
+    int status = FALSE;
 
+    InitGlobals();
     if(argc > 1)
     {
-        input = fopen(argv[1], "r");
+        file_name = GetFileName(argv[1], STAGE_FIRST);
+        input = OpenFile(file_name, "r");
+        
+        free(file_name);
+        file_name = NULL;
 
         if(input)
         {
-            processed_input_name = RunPreProcessor(input, argv[1]);
+            status = RunPreProcessor(input, argv[1]);
             fclose(input);
 
-            if(processed_input_name)
+            if(status)
             {
-                processed_input = fopen(processed_input_name, "r");
-                if(processed_input)
+                /*input = fopen(file_name, "r");
+                if(input)
                 {
-                    RunAssembler(processed_input, argv[1]);
+                    RunAssembler(input, argv[1]);*/
                     printf("success\n");
-                    fclose(processed_input);
+                   /* fclose(input);
                 }
-                else {}
+                else {}*/
                 /* could not open the processed file (reach here is very bad..) */
             }
             else {}
             /* PreProcessor failed for some reason. */
         }
-        else {}
+        else 
+        {
+        }
         /* could not open input file */
     }
 

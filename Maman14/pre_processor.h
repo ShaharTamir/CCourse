@@ -1,6 +1,6 @@
-#ifndef __PRE_PROCESSOR_H__
-#define __PRE_PROCESSOR_H__
+#ifndef __PRE_PROC_H__
+#define __PRE_PROC_H__
 
-char* RunPreProcessor(FILE *in, char* file_name);
+int RunPreProcessor(FILE *in, char *file_name);
 
-#endif /* __PRE_PROCESSOR_H__ */
+#endif /* __PRE_PROC_H__ */

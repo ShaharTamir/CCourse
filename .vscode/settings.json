@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stack.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "basic_defs.h": "c"
     }
 }
