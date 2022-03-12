@@ -21,7 +21,7 @@ typedef struct
 
 typedef enum
 {
-    MOV,
+    MOV = 1, /* must start from 1, 0 is FALSE val */
     CMP,
     ADD,
     SUB,
@@ -39,6 +39,14 @@ typedef enum
     STOP,
     NUM_EFUNCS
 } EFunc;
+
+typedef enum
+{
+    INST_DATA = 1, /* must start from 1, 0 is FALSE val */
+    INST_STRING,
+    INST_EXTERN,
+    INST_ENTRY
+} EInstruction;
 
 void InitGlobals();
 

@@ -13,6 +13,7 @@
 
 extern const SFunctions g_func_names[NUM_FUNCTIONS];
 extern const char *g_registers[NUM_REGISTERS];
+extern const char *g_instructions[NUM_INSTRUCTIONS];
 
 static int SkipSpaces(char *line, int curr_index, int line_len)
 {
@@ -43,6 +44,30 @@ void ParserMoveToLineNumber(FILE *input, int line_len, int line_number)
     free(dummy_line);
 }
 
+int ParserIsNewLabel(char *word)
+{
+    int length = 0;
+    length = strlen(word);
+
+    if(length > 1 && word[length - 1] == ':')
+    {
+        word[length - 1] = DELIMITER;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+int ParserIsExtEnt(char *word)
+{
+    if(!strcmp(word, g_instructions[INST_EXTERN - 1]))
+        return INST_EXTERN;
+    if(!strcmp(word, g_instructions[INST_ENTRY - 1]))
+        return INST_ENTRY;
+    
+    return FALSE;
+}
+
 int ParserIsLineNote(char *line, int line_len)
 {
     int first_word_index = 0;
@@ -60,7 +85,7 @@ int ParserIsFunction(char *word)
     {
         if(!strcmp(word, g_func_names[i].name))
         {
-            return TRUE;
+            return i + 1;
         }
     }
 
@@ -75,7 +100,7 @@ int ParserIsRegister(char *word)
     {
         if(!strcmp(word, g_registers[i]))
         {
-            return TRUE;
+            return i + 1;
         }
     }
 
@@ -101,33 +126,43 @@ int ParserNextWord(char *line, char *word, int curr_index, int line_len)
     return curr_index;
 }
 
+int ParserIsMoreWords(char *line, int curr_index, int line_len)
+{
+    curr_index = SkipSpaces(line, curr_index, line_len);
+
+    return curr_index == line_len;
+}
+
 int ParserValidateName(char *name)
 {
     int len = 0;
-    int valid_len = 0;
     int i = 0;
     int ret_val = FALSE;
 
     len = strlen(name);
 
-    if(len < MAX_LABEL_NAME)
+    if(len < MAX_LABEL_NAME && len > 0)
     {
-        valid_len = name[len - 1] == LABEL_DEF ? len - 1 : len;
-
         while((isalpha(name[i]) || isdigit(name[i])) && i < len)
         {
             ++i;
         }
 
-        if(i == valid_len)
+        if(i == len)
         {
-            name[i] = DELIMITER;
             ret_val = !ParserIsFunction(name) && !ParserIsRegister(name);
+
+            if(!ret_val)
+                printf("%serror: name canno't be same as registers or functions%s\n", CLR_RED, CLR_WHT);
         }
         else
         {
             printf("%serror: name may conatin only ascii letters and digits\n%s", CLR_RED, CLR_WHT);
         }
+    }
+    else
+    {
+        printf("%serror: name length is not valid%s\n", CLR_RED, CLR_WHT);
     }
 
     return ret_val;
