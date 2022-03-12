@@ -39,4 +39,10 @@ void LabelSetName(SLabel *lbl, char *name);
  */
 int LabelSetType(SLabel *lbl, ELabelType type);
 
+/* compare function for data structures (linked_list) */
+int LabelCompareName(void *lbl, void *str, void *params);
+
+/* destroy wrapper for data structures (linked_list) */
+int LabelDestroyWrapper(void *data, void *params);
+
 #endif  /* _LABEL_H_ */ 

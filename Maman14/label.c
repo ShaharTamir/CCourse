@@ -129,3 +129,19 @@ int LabelSetType(SLabel *lbl, ELabelType type)
     return ret_val;
 }
 
+int LabelCompareName(void *lbl, void *str, void *params)
+{
+    (void) params;
+
+    return strcmp((char *)(((SLabel*)lbl)->name), (char *)str);
+}
+
+int LabelDestroyWrapper(void *data, void *params)
+{
+    SLabel *lbl = NULL;
+    lbl = (SLabel *)data;
+
+    LabelDestroy(lbl);
+
+    return TRUE;
+}

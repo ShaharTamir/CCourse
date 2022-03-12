@@ -1,8 +1,9 @@
 
+#define _GNU_SOURCE
 #include <stdio.h> /* FILE */
 
-#include "../Utills/node.h"
-#include "../Utills/linked_list.h"
+#include <node.h>
+#include <linked_list.h>
 
 #include "basic_defs.h"
 #include "file_handler.h"
@@ -26,6 +27,7 @@ typedef struct
 } SAssemblerData;
 
 static int InitAssemblerData(SAssemblerData *data);
+static void DestroyAssemblerData(SAssemblerData *data);
 
 /* 
     This function is the main logic and has 3 jobs - 
@@ -44,6 +46,7 @@ static int DefineSymbolTable(FILE *in, SAssemblerData *data);
 static int CheckNewLabel(SAssemblerData *data);
 static void HandleNewLabelDef(SAssemblerData *data);
 static void HandleNewInstructDef(SAssemblerData *data, int instruct);
+static SLabel *AddLabelToSymTable(SAssemblerData *data);
 
 void RunAssembler(FILE *in, char *file_name)
 {
@@ -56,6 +59,7 @@ void RunAssembler(FILE *in, char *file_name)
 
         if(status)
         {
+            printf("success!!!\n");
             /*
                 OpenEntryFile();
                 if(open)
@@ -73,16 +77,45 @@ void RunAssembler(FILE *in, char *file_name)
             */
         }
     }
+
+    DestroyAssemblerData(&data);
 }
 
 int InitAssemblerData(SAssemblerData *data)
 {
-    data->data_count = 0;
-    data->instruct_count = 0;
+    int ret_val = FALSE;
 
     data->fh = CreateFileHandlerData(MAX_LINE_LENGTH, MAX_LABEL_NAME);
+    
+    if(data->fh)
+    {
+        data->sym_table = LinkListCreate(NULL, LabelCompareName);
+        
+        if(data->sym_table)
+        {
+            ret_val = TRUE;
+            data->data_count = 0;
+            data->instruct_count = 0;
+        }
+    }
 
-    return data->fh != NULL;
+    return ret_val;
+}
+
+void DestroyAssemblerData(SAssemblerData *data)
+{
+    if(data)
+    {
+        if(data->fh)
+            DestroyFileHandlerData(data->fh);
+        
+        if(data->sym_table)
+        {
+            LinkListForEach(data->sym_table, LabelDestroyWrapper, NULL); /* release all allocations for macro names */
+            LinkListDestroy(data->sym_table);
+            data->sym_table = NULL;
+        }
+    }
 }
 
 int DefineSymbolTable(FILE *in, SAssemblerData *data)
@@ -114,6 +147,8 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
             */
         }
     }
+
+    return data->status;
 }
 
 int CheckNewLabel(SAssemblerData *data)
@@ -152,7 +187,6 @@ void HandleNewLabelDef(SAssemblerData *data)
 
 void HandleNewInstructDef(SAssemblerData *data, int instruct)
 {
-    int ret_val = TRUE;
     SNode *iter = NULL;
     SLabel *lbl = NULL;
 

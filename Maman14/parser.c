@@ -49,7 +49,7 @@ int ParserIsNewLabel(char *word)
     int length = 0;
     length = strlen(word);
 
-    if(length > 1 && word[length - 1] == ':')
+    if(length > 1 && word[length - 1] == LABEL_DEF)
     {
         word[length - 1] = DELIMITER;
         return TRUE;

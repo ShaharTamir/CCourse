@@ -5,7 +5,7 @@
 #include "basic_defs.h"
 #include "file_handler.h"
 #include "pre_processor.h"
-/*#include "assembler.h"*/
+#include "assembler.h"
 
 int main(int argc, char *argv[])
 {
@@ -29,14 +29,16 @@ int main(int argc, char *argv[])
 
             if(status)
             {
-                /*input = fopen(file_name, "r");
+                file_name = GetFileName(argv[1], STAGE_PRE_PROC);
+                input = OpenFile(file_name, "r");
+
                 if(input)
                 {
-                    RunAssembler(input, argv[1]);*/
-                    printf("success\n");
-                   /* fclose(input);
+                    printf("pre_proc success\n");
+                    RunAssembler(input, argv[1]);
+                    fclose(input);
                 }
-                else {}*/
+                else {}
                 /* could not open the processed file (reach here is very bad..) */
             }
             else {}
