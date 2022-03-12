@@ -35,3 +35,54 @@ FILE *OpenFile(const char *file_name, const char *mode)
 
     return ret;
 }
+
+SFileHandlerData *CreateFileHandlerData(int line_len, int word_len)
+{
+    SFileHandlerData *fh = NULL;
+
+    fh = (SFileHandlerData *)malloc(sizeof(SFileHandlerData));
+
+    if(fh)
+    {
+        fh->line = (char *)malloc(line_len);
+        if(fh->line)
+        {
+            fh->word = (char *)malloc(word_len);
+            if(fh->word)
+            {
+                memset(fh->line, 0, line_len);
+                memset(fh->word, 0, word_len);
+                fh->line_len = line_len;
+                fh->bytes_read = 0;
+                fh->line_count = 0;
+            }
+            else
+            {
+                free(fh->line);
+                fh->line = NULL;
+            }
+        }
+    }
+
+    return fh;
+}
+
+void DestroyFileHandlerData(SFileHandlerData *fh)
+{
+    if(fh)
+    {
+        if(fh->line)
+        {
+            free(fh->line);
+            fh->line = NULL;
+        }
+        if(fh->word)
+        {
+            free(fh->word);
+            fh->word = NULL;
+        }
+
+        free(fh);
+        fh = NULL;
+    }
+}
