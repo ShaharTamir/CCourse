@@ -56,6 +56,22 @@ void LabelDestroy(SLabel *lbl)
     }
 }
 
+ELabelType LabelInstructToLblType(int instruction)
+{
+    switch(instruction)
+    {
+        case INST_DATA:
+        case INST_STRING:
+            return LBL_DATA;
+        case INST_EXTERN:
+            return LBL_EXTERN;
+        case INST_ENTRY:
+            return LBL_ENTRY;
+    }
+
+    return FALSE;
+}
+
 void LabelSetMemAddress(SLabel *lbl, int mem_address)
 {
     if(!lbl)
@@ -90,16 +106,16 @@ int LabelSetType(SLabel *lbl, ELabelType type)
 
     if(lbl && type < NUM_LABEL_TYPES)
     {
-        if(lbl->type & (1 << EXTERN))
+        if(lbl->type == (1 << LBL_EXTERN) && LBL_EXTERN != type)
         {
             printf("%serror: trying to add attributes to an external attributes%s", CLR_RED, CLR_WHT);
         }
-        else if(EXTERN == type && lbl->type != 0)
+        else if(LBL_EXTERN == type && lbl->type != (1 << LBL_EXTERN))
         {
             printf("%serror: trying to define .extern to an already defined symbol%s", CLR_RED, CLR_WHT);
         }
-        else if ((CODE == type && lbl->type & (1 << DATA)) ||
-            (DATA == type && lbl->type & (1 << CODE)))
+        else if ((LBL_CODE == type && lbl->type & (1 << LBL_DATA)) ||
+            (LBL_DATA == type && lbl->type & (1 << LBL_CODE)))
         {
             printf("%serror: trying to define symbol with both .code and .data attributes%s", CLR_RED, CLR_WHT);
         }

@@ -5,10 +5,10 @@ typedef struct _SLabel SLabel;
 
 typedef enum
 {
-    EXTERN, /* 0001 */
-    ENTRY,  /* 0010 */
-    CODE,   /* 0100 */
-    DATA,   /* 1000 */
+    LBL_EXTERN, /* 0001 */
+    LBL_ENTRY,  /* 0010 */
+    LBL_CODE,   /* 0100 */
+    LBL_DATA,   /* 1000 */
     NUM_LABEL_TYPES
 } ELabelType;
 
@@ -17,6 +17,8 @@ SLabel *LabelCreate(char *name);
 
 /* Destroys label */
 void LabelDestroy(SLabel *lbl);
+
+ELabelType LabelInstructToLblType(int instruction);
 
 /* Set the memory address of label in program */
 void LabelSetMemAddress(SLabel *lbl, int mem_address);
