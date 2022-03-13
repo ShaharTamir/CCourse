@@ -23,6 +23,7 @@ typedef struct
     int instruct_count;
     int status;
     SLinkedList *sym_table;
+    SLabel *lbl;
     SFileHandlerData *fh;
 } SAssemblerData;
 
@@ -96,6 +97,7 @@ int InitAssemblerData(SAssemblerData *data)
             ret_val = TRUE;
             data->data_count = 0;
             data->instruct_count = 0;
+            data->lbl = NULL;
         }
     }
 
@@ -123,8 +125,9 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
     while(data->fh->bytes_read != EOF)
     {
         ++data->fh->line_count;
+        data->fh->index = 0;
+        data->lbl = NULL;
         data->fh->bytes_read = getline(&data->fh->line, &data->fh->line_len, in);
-        
         data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
         
         if(CheckNewLabel(data)) /* true means continue parsing line */
@@ -162,6 +165,7 @@ int CheckNewLabel(SAssemblerData *data)
     }
     else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word)))
     {
+        /*DELETE printf("instruction: %s\n", data->fh->word); */
         HandleNewInstructDef(data, instruct);
         continue_read_line = FALSE;
     }
@@ -171,11 +175,18 @@ int CheckNewLabel(SAssemblerData *data)
 
 void HandleNewLabelDef(SAssemblerData *data)
 {
-    SLabel *lbl = NULL;
+    SNode *iter = NULL;
 
-    if(ParserValidateName(data->fh->word) && NULL == LinkListFind(data->sym_table, data->fh->word, NULL))
+    if(ParserValidateName(data->fh->word) && NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
     {
-        lbl = AddLabelToSymTable(data);
+        /*DELETE printf("new symbol: %s\n",data->fh->word);*/
+        data->lbl = AddLabelToSymTable(data);
+        /* TODO: LabelSetMemAddress(lbl,  + MEM_ADD_OFFSET); */
+    }
+    else if(iter && LabelIsEntry(iter->data))
+    {
+        data->lbl = iter->data;
+        /*DELETE printf("entry symbol is defined: %s\n", data->fh->word);*/
         /* TODO: LabelSetMemAddress(lbl,  + MEM_ADD_OFFSET); */
     }
     else
@@ -188,18 +199,17 @@ void HandleNewLabelDef(SAssemblerData *data)
 void HandleNewInstructDef(SAssemblerData *data, int instruct)
 {
     SNode *iter = NULL;
-    SLabel *lbl = NULL;
 
     data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
-
+    /*DELETE printf("label: %s\n", data->fh->word);*/
     if(ParserValidateName(data->fh->word))
     {
         if(NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
-            lbl = AddLabelToSymTable(data);
+            data->lbl = AddLabelToSymTable(data);
         else
-            lbl = (SLabel*)iter->data;
+            data->lbl = (SLabel*)iter->data;
             
-        if(LabelSetType(lbl, LabelInstructToLblType(instruct)))
+        if(LabelSetType(data->lbl, LabelInstructToLblType(instruct)))
         {
             if(ParserIsMoreWords(data->fh->line, data->fh->index, data->fh->bytes_read))
             {

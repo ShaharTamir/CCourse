@@ -41,7 +41,7 @@ int RunPreProcessor(FILE *in, char *file_name)
         {
             ++data.fh->line_count;
             data.fh->bytes_read = getline(&data.fh->line, &data.fh->line_len, in);
-            data.ignore_line = is_macro; /* to handle 'endm' */
+            data.ignore_line = is_macro || data.fh->bytes_read == EOF; /* to handle 'endm' */
             
             if(!ParserIsLineNote(data.fh->line, data.fh->bytes_read))
             {

@@ -130,7 +130,7 @@ int ParserIsMoreWords(char *line, int curr_index, int line_len)
 {
     curr_index = SkipSpaces(line, curr_index, line_len);
 
-    return curr_index == line_len;
+    return curr_index == line_len - 1;
 }
 
 int ParserValidateName(char *name)

@@ -110,7 +110,7 @@ int LabelSetType(SLabel *lbl, ELabelType type)
         {
             printf("%serror: trying to add attributes to an external attributes%s", CLR_RED, CLR_WHT);
         }
-        else if(LBL_EXTERN == type && lbl->type != (1 << LBL_EXTERN))
+        else if(LBL_EXTERN == type && lbl->type > 0 && lbl->type != (1 << LBL_EXTERN))
         {
             printf("%serror: trying to define .extern to an already defined symbol%s", CLR_RED, CLR_WHT);
         }
@@ -118,6 +118,11 @@ int LabelSetType(SLabel *lbl, ELabelType type)
             (LBL_DATA == type && lbl->type & (1 << LBL_CODE)))
         {
             printf("%serror: trying to define symbol with both .code and .data attributes%s", CLR_RED, CLR_WHT);
+        }
+        else if((LBL_CODE == type && lbl->type & (1 << LBL_CODE)) ||
+            (LBL_DATA == type && lbl->type & (1 << LBL_DATA)))
+        {
+            printf("%serror: trying to define label twice with the same attributes%s", CLR_RED, CLR_WHT);
         }
         else
         {
@@ -127,6 +132,11 @@ int LabelSetType(SLabel *lbl, ELabelType type)
     }
 
     return ret_val;
+}
+
+int LabelIsEntry(SLabel *lbl)
+{
+    return lbl->type == (1 << LBL_ENTRY);
 }
 
 int LabelCompareName(void *lbl, void *str, void *params)

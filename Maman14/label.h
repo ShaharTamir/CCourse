@@ -39,6 +39,9 @@ void LabelSetName(SLabel *lbl, char *name);
  */
 int LabelSetType(SLabel *lbl, ELabelType type);
 
+/* check that label is define as ONLY .entry */
+int LabelIsEntry(SLabel *lbl);
+
 /* compare function for data structures (linked_list) */
 int LabelCompareName(void *lbl, void *str, void *params);
 
