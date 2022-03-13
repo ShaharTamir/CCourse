@@ -5,7 +5,7 @@
 #include <colors.h>
 #include "file_handler.h"
 
-char *GetFileName(char *file_name, EProgStage stage)
+char *FileHandlerGetFileName(char *file_name, EProgStage stage)
 {
     static char *stages_end[] = {".as", ".am", ".obj", ".ext", ".ent"};
     char *new_file_name = NULL;
@@ -21,7 +21,7 @@ char *GetFileName(char *file_name, EProgStage stage)
     return new_file_name;
 }
 
-FILE *OpenFile(const char *file_name, const char *mode)
+FILE *FileHandlerOpenFile(const char *file_name, const char *mode)
 {
     FILE *ret = NULL;
 
@@ -36,7 +36,7 @@ FILE *OpenFile(const char *file_name, const char *mode)
     return ret;
 }
 
-SFileHandlerData *CreateFileHandlerData(int line_len, int word_len)
+SFileHandlerData *FileHandlerCreate(int line_len, int word_len)
 {
     SFileHandlerData *fh = NULL;
 
@@ -55,6 +55,7 @@ SFileHandlerData *CreateFileHandlerData(int line_len, int word_len)
                 fh->line_len = line_len;
                 fh->bytes_read = 0;
                 fh->line_count = 0;
+                fh->index = 0;
             }
             else
             {
@@ -67,7 +68,7 @@ SFileHandlerData *CreateFileHandlerData(int line_len, int word_len)
     return fh;
 }
 
-void DestroyFileHandlerData(SFileHandlerData *fh)
+void FileHandlerDestroy(SFileHandlerData *fh)
 {
     if(fh)
     {

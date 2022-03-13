@@ -12,6 +12,9 @@
 
 #include <colors.h>
 
+#define ERR(string) printf("%serror: %s%s\n", CLR_RED, string, CLR_WHT)
+#define ERR_AT(string, line) printf("%serror: %s at: %s%d%s\n", CLR_RED, string, CLR_YEL, line, CLR_WHT)
+
 typedef struct 
 {
     int opcode;

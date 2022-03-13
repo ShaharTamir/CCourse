@@ -25,7 +25,6 @@ static int FindMacroLogic(FILE *in, SPreProcData *data);
 static int AddMacroToList(SPreProcData *data);
 static void SpreadMacro(FILE *in, SPreProcData *data, SMacroType *macro);
 static int SetMacroEnd(FILE *in, SPreProcData *data);
-static int ListStringCompare(void *macro, void *str_b, void *params);
 
 typedef int (*PreProcFunc)(FILE *in, SPreProcData *data);
 static const PreProcFunc pre_proc_states_func[] = {FindMacroLogic, SetMacroEnd};
@@ -48,7 +47,7 @@ int RunPreProcessor(FILE *in, char *file_name)
                 for(data.fh->index = 0 ; data.fh->index < data.fh->bytes_read; ++data.fh->index)
                 {
                     data.fh->index = ParserNextWord(data.fh->line, data.fh->word, data.fh->index, data.fh->bytes_read);
-                    is_macro = pre_proc_states_func[is_macro](in, &data);
+                    is_macro = pre_proc_states_func[is_macro](in, &data); /* call logic function according to is_macro status */
                 }
 
                 if(!is_macro && !data.ignore_line)
@@ -67,16 +66,16 @@ int InitPreProc(SPreProcData *data, char *file_name)
     char *proc_file_name = NULL;
     int ret_val = FALSE;
 
-    data->fh = CreateFileHandlerData(MAX_LINE_LENGTH, MAX_LABEL_NAME);
+    data->fh = FileHandlerCreate(MAX_LINE_LENGTH, MAX_LABEL_NAME);
     if(data->fh)
     {
-        proc_file_name = GetFileName(file_name, STAGE_PRE_PROC); /* uses malloc */  
+        proc_file_name = FileHandlerGetFileName(file_name, STAGE_PRE_PROC); /* uses malloc */  
         if(proc_file_name)
         {
-            data->macro_list = LinkListCreate(NULL, ListStringCompare);
+            data->macro_list = LinkListCreate(NULL, MacroCompareName);
             if(data->macro_list)
             {
-                data->out = OpenFile(proc_file_name, "w");
+                data->out = FileHandlerOpenFile(proc_file_name, "w");
                 if(data->out)
                 {
                     data->ignore_line = FALSE;
@@ -97,7 +96,7 @@ void DestroyPreProc(SPreProcData *data)
 {
     if(data)
     {
-        DestroyFileHandlerData(data->fh);
+        FileHandlerDestroy(data->fh);
 
         if(data->out)
         {
@@ -124,7 +123,7 @@ int FindMacroLogic(FILE *in, SPreProcData *data)
         
         if(ParserValidateName(data->fh->word))
         {
-            if(NULL == LinkListFind(data->macro_list, data->fh->word, NULL))
+            if(NULL == LinkListFind(data->macro_list, data->fh->word, NULL)) /* found new valid macro definition */
             {
                 ret_val = TRUE;
                 if(!AddMacroToList(data))
@@ -132,19 +131,17 @@ int FindMacroLogic(FILE *in, SPreProcData *data)
             }
             else
             {
+                ERR_AT("macro name is already defined", data->fh->line_count);
                 data->status = FALSE;
-                printf("%serror: macro name in line: %s%d%s is already defined%s\n", \
-                    CLR_RED, CLR_YEL, data->fh->line_count, CLR_RED, CLR_WHT);
             }
         }
         else
         {
+            ERR_AT("invalid macro name", data->fh->line_count);
             data->status = FALSE;
-            printf("%serror: invalid macro name in line: %s%d%s\n", \
-                CLR_RED, CLR_YEL, data->fh->line_count, CLR_WHT);
         }
     }
-    else if(NULL != (iter = LinkListFind(data->macro_list, data->fh->word, NULL)))
+    else if(NULL != (iter = LinkListFind(data->macro_list, data->fh->word, NULL))) /* found macro we already know */
     {
         SpreadMacro(in, data, iter->data);
         data->ignore_line = TRUE;
@@ -204,11 +201,4 @@ int SetMacroEnd(FILE *in, SPreProcData *data)
     }
 
     return TRUE;  
-}
-
-int ListStringCompare(void *macro, void *str_b, void *params)
-{    
-    (void) params;
-
-    return strcmp((char *)(((SMacroType*)macro)->name), (char *)str_b);
 }

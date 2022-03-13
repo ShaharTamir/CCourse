@@ -23,12 +23,12 @@ typedef struct
     char *word;
 } SFileHandlerData;
 
-char *GetFileName(char *file_name, EProgStage stage);
+char *FileHandlerGetFileName(char *file_name, EProgStage stage);
 
-FILE *OpenFile(const char *file_name, const char *mode);
+FILE *FileHandlerOpenFile(const char *file_name, const char *mode);
 
-SFileHandlerData *CreateFileHandlerData(int line_len, int word_len);
+SFileHandlerData *FileHandlerCreate(int line_len, int word_len);
 
-void DestroyFileHandlerData(SFileHandlerData *fh);
+void FileHandlerDestroy(SFileHandlerData *fh);
 
 #endif /* __FILE_HNALDER_H__ */

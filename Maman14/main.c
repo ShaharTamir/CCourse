@@ -16,8 +16,8 @@ int main(int argc, char *argv[])
     InitGlobals();
     if(argc > 1)
     {
-        file_name = GetFileName(argv[1], STAGE_FIRST);
-        input = OpenFile(file_name, "r");
+        file_name = FileHandlerGetFileName(argv[1], STAGE_FIRST);
+        input = FileHandlerOpenFile(file_name, "r");
         
         free(file_name);
         file_name = NULL;
@@ -29,12 +29,11 @@ int main(int argc, char *argv[])
 
             if(status)
             {
-                file_name = GetFileName(argv[1], STAGE_PRE_PROC);
-                input = OpenFile(file_name, "r");
+                file_name = FileHandlerGetFileName(argv[1], STAGE_PRE_PROC);
+                input = FileHandlerOpenFile(file_name, "r");
 
                 if(input)
                 {
-                    printf("pre_proc success\n");
                     RunAssembler(input, argv[1]);
                     fclose(input);
                 }

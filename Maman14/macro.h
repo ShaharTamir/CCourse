@@ -16,4 +16,7 @@ void MacroDestroy(SMacroType *macro);
  * to properly release macro memory allocation before destroy list. */
 int MacroDestroyWrapper(void *data, void *params);
 
+/* compare function for data structures (linked_list) */
+int MacroCompareName(void *macro, void *str_b, void *params);
+
 #endif /* __MACRO_H__ */

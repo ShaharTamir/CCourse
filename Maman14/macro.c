@@ -53,3 +53,10 @@ int MacroDestroyWrapper(void *data, void *params)
 
     return TRUE;
 }
+
+int MacroCompareName(void *macro, void *str_b, void *params)
+{
+    (void) params;
+
+    return strcmp((char *)(((SMacroType*)macro)->name), (char *)str_b);
+}

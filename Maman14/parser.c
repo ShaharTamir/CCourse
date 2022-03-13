@@ -153,16 +153,16 @@ int ParserValidateName(char *name)
             ret_val = !ParserIsFunction(name) && !ParserIsRegister(name);
 
             if(!ret_val)
-                printf("%serror: name canno't be same as registers or functions%s\n", CLR_RED, CLR_WHT);
+                ERR("name canno't be same as registers or functions");
         }
         else
         {
-            printf("%serror: name may conatin only ascii letters and digits\n%s", CLR_RED, CLR_WHT);
+            ERR("name may conatin only ascii letters and digits");
         }
     }
     else
     {
-        printf("%serror: name length is not valid%s\n", CLR_RED, CLR_WHT);
+        ERR("name length is not valid");
     }
 
     return ret_val;
