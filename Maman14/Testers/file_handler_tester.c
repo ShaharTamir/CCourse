@@ -11,9 +11,9 @@ int main(int argc, char *argv[])
     {
         for(i = 1; i < argc; ++i)
         {
-            name = GetFileName(argv[i], STAGE_FIRST);
+            name = FileHandlerGetFileName(argv[i], STAGE_FIRST);
             printf("%s\n", name);
-            fp = OpenFile(name, "r");
+            fp = FileHandlerOpenFile(name, "r");
             if(fp)
             {
                 fclose(fp);

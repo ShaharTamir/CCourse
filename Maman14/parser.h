@@ -18,6 +18,12 @@ int ParserIsNewLabel(char *word);
 */
 int ParserIsExtEnt(char *word);
 
+/*
+   return EInstruction value if word is ".data" or ".string" (matching index of g_instructions + 1).
+   else return FALSE.
+*/
+int ParserIsDataString(char *word);
+
 /* return TRUE if line is empty or note (means can discard the line) */
 int ParserIsLineNote(char *line, int line_len);
 
@@ -38,5 +44,14 @@ int ParserIsMoreWords(char *line, int curr_index, int line_len);
 
 /* verify name is not a function and that contains only alphabet characters. */
 int ParserValidateName(char *name);
+
+/* verify string is valid */
+int ParserIsValidString(char *line, int index, int line_len);
+
+/* 
+   verify data (numbers) is valid - number is valid (15bits limit).
+   works for single numbers and arrays.
+*/
+int ParserIsValidData(char *line, int index, int line_len);
 
 #endif /* __PARSER_H__ */

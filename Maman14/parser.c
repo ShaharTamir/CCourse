@@ -68,6 +68,16 @@ int ParserIsExtEnt(char *word)
     return FALSE;
 }
 
+int ParserIsDataString(char *word)
+{
+    if(!strcmp(word, g_instructions[INST_DATA - 1]))
+        return INST_DATA;
+    if(!strcmp(word, g_instructions[INST_STRING - 1]))
+        return INST_STRING;
+    
+    return FALSE;
+}
+
 int ParserIsLineNote(char *line, int line_len)
 {
     int first_word_index = 0;

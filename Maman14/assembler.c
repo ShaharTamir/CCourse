@@ -11,11 +11,7 @@
 #include "label.h"
 #include "assembler.h"
 
-#define ERR(string) printf("%serror: %s%s\n", CLR_RED, string, CLR_WHT)
-#define ERR_AT(string, line) printf("%serror: %s at: %s%d%s\n", CLR_RED, string, CLR_YEL, line, CLR_WHT)
 #define MEM_ADD_OFFSET 100
-
-extern const char *g_instructions[NUM_INSTRUCTIONS];
 
 typedef struct
 {
@@ -48,6 +44,10 @@ static int CheckNewLabel(SAssemblerData *data);
 static void HandleNewLabelDef(SAssemblerData *data);
 static void HandleNewInstructDef(SAssemblerData *data, int instruct);
 static SLabel *AddLabelToSymTable(SAssemblerData *data);
+static int AddLabelTypeCodeData(SAssemblerData *data, int instruction);
+static void HandleString(SAssemblerData *data);
+static void HandleData(SAssemblerData *data);
+static void HandleCode(SAssemblerData *data);
 
 void RunAssembler(FILE *in, char *file_name)
 {
@@ -86,7 +86,7 @@ int InitAssemblerData(SAssemblerData *data)
 {
     int ret_val = FALSE;
 
-    data->fh = CreateFileHandlerData(MAX_LINE_LENGTH, MAX_LABEL_NAME);
+    data->fh = FileHandlerCreate(MAX_LINE_LENGTH, MAX_LABEL_NAME);
     
     if(data->fh)
     {
@@ -109,7 +109,7 @@ void DestroyAssemblerData(SAssemblerData *data)
     if(data)
     {
         if(data->fh)
-            DestroyFileHandlerData(data->fh);
+            FileHandlerDestroy(data->fh);
         
         if(data->sym_table)
         {
@@ -122,6 +122,8 @@ void DestroyAssemblerData(SAssemblerData *data)
 
 int DefineSymbolTable(FILE *in, SAssemblerData *data)
 {
+    int instruction = FALSE;
+
     while(data->fh->bytes_read != EOF)
     {
         ++data->fh->line_count;
@@ -132,22 +134,25 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
         
         if(CheckNewLabel(data)) /* true means continue parsing line */
         {
-            /*
-            if(Instruction == data || string)
-            {
-                set label type as data;
-                ++data_counter;
-                verify syntax;
-            }
-            else // means it's a code line
-            {
-                if(is_label)
-                    set label type as code;
-                ++code_counter;
-                according to opcode - verify syntax;
-            }
+            data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
+            instruction = ParserIsDataString(data->fh->word);
             
-            */
+            if(data->lbl)
+                AddLabelTypeCodeData(data, instruction);
+
+            if(instruction)
+            {
+                /* TODO: ++data_counter */
+                if(INST_STRING == instruction)
+                    HandleString(data);
+                else
+                    HandleData(data);
+            }
+            else
+            {
+                /* TODO: ++code_counter */
+                HandleCode(data);
+            }
         }
     }
 
@@ -209,19 +214,13 @@ void HandleNewInstructDef(SAssemblerData *data, int instruct)
         else
             data->lbl = (SLabel*)iter->data;
             
-        if(LabelSetType(data->lbl, LabelInstructToLblType(instruct)))
+        if(AddLabelTypeCodeData(data, instruct))
         {
             if(ParserIsMoreWords(data->fh->line, data->fh->index, data->fh->bytes_read))
             {
                 ERR_AT("invalid text after label definition", data->fh->line_count);
                 data->status = FALSE;
             }   
-        }
-        else
-        {
-            /* if FALSE- LabelSetType already print the error, need line num */
-            printf("%s at: %s%d%s\n", CLR_RED, CLR_YEL, data->fh->line_count, CLR_WHT);
-            data->status = FALSE;
         }
     }
     else
@@ -240,3 +239,59 @@ SLabel *AddLabelToSymTable(SAssemblerData *data)
     
     return iter->data;
 }
+
+int AddLabelTypeCodeData(SAssemblerData *data, int instruction)
+{
+    int inst_type = FALSE;
+
+    inst_type = instruction ? LabelInstructToLblType(instruction) : LBL_CODE;
+
+    if(!LabelSetType(data->lbl, inst_type))
+    {
+        /* if FALSE- LabelSetType already print the error, need line num */
+        printf("%s at: %s%d%s\n", CLR_RED, CLR_YEL, data->fh->line_count, CLR_WHT);
+        data->status = FALSE;
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+void HandleString(SAssemblerData *data)
+{
+    if(!ParserIsValidString(data->fh->line, data->fh->index, data->fh->bytes_read))
+    {
+        ERR_AT("string is not valid", data->fh->line_count);
+        data->status = FALSE;
+    }
+}
+
+void HandleData(SAssemblerData *data)
+{
+    if(!ParserIsValidData(data->fh->line, data->fh->index, data->fh->bytes_read))
+    {
+        ERR_AT("data is not valid", data->fh->line_count);
+        data->status = FALSE;
+    }
+}
+
+void HandleCode(SAssemblerData *data)
+{
+    int func = FALSE;
+
+    data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
+    func = ParserIsFunction(data->fh->word);
+
+    if(func)
+    {
+        data->status = FunctionValidateFunc(data->fh, func);
+    }
+    else
+    {
+        ERR_AT("function is missing", data->fh->line_count);
+        data->status = FALSE;
+    }
+}
+
+
+
