@@ -10,6 +10,12 @@
 #define DELIMITER '\0'
 #define NOTE ';'
 #define LABEL_DEF ':'
+#define STRING_DEF '"'
+#define POS '+'
+#define NEG '-'
+#define NUM_SEPARATOR ','
+#define LAST_CHAR_OFFSET_FROM_STR_END 2
+#define MAX_NUMBER 
 
 extern const SFunctions g_func_names[NUM_FUNCTIONS];
 extern const char *g_registers[NUM_REGISTERS];
@@ -18,10 +24,21 @@ extern const char *g_instructions[NUM_INSTRUCTIONS];
 static int SkipSpaces(char *line, int curr_index, int line_len)
 {
     /* skip all white spaces before word */
-    while(curr_index < line_len 
-        && isspace(line[curr_index]))
+    while(curr_index < line_len && 
+        isspace(line[curr_index]))
     {
         ++curr_index;
+    }
+
+    return curr_index;
+}
+
+static int ReverseSkipSpaces(char *line, int curr_index)
+{
+    while(curr_index >= 0 && 
+        isspace(line[curr_index]))
+    {
+        --curr_index;
     }
 
     return curr_index;
@@ -173,6 +190,73 @@ int ParserValidateName(char *name)
     else
     {
         ERR("name length is not valid");
+    }
+
+    return ret_val;
+}
+
+int ParserIsValidString(char *line, int index, int line_len)
+{
+    int ret_val = FALSE;
+    int end_string_index = 0;
+
+    index = SkipSpaces(line, index, line_len);
+
+    if(line[index] == STRING_DEF)
+    {
+        end_string_index = ReverseSkipSpaces(line, line_len - LAST_CHAR_OFFSET_FROM_STR_END);
+
+        if(end_string_index > index && line[end_string_index] == STRING_DEF)
+        {
+            ret_val = TRUE;
+        }
+    }
+
+    return ret_val;
+}
+
+int ParserIsValidData(char *line, int index, int line_len)
+{
+    int ret_val = TRUE;
+    int expect_num = FALSE;
+
+    while(index < line_len) /* check string, delimiter ('\0') not included */
+    {
+        index = SkipSpaces(line, index, line_len);
+
+        if(line[index] == POS || line[index] == NEG)
+            ++index;
+
+        if(isdigit(line[index]))
+        {
+            expect_num = FALSE;
+            while(isdigit(line[index]))
+            {
+                ++index;
+            }
+
+            index = SkipSpaces(line, index, line_len);
+            if(line[index] == NUM_SEPARATOR)
+            {
+                expect_num = TRUE;
+                ++index;
+            }
+        }
+        else
+        {
+            ret_val = FALSE;
+            break;
+        }
+    }
+
+    if(expect_num)
+    {
+        ERR("array end with num-separator, should end with number");
+        ret_val = FALSE;
+    }
+    else if(!ret_val)
+    {
+        ERR("invalid data character sequence");
     }
 
     return ret_val;

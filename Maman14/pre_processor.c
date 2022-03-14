@@ -66,7 +66,7 @@ int InitPreProc(SPreProcData *data, char *file_name)
     char *proc_file_name = NULL;
     int ret_val = FALSE;
 
-    data->fh = FileHandlerCreate(MAX_LINE_LENGTH, MAX_LABEL_NAME);
+    data->fh = FileHandlerCreate(MAX_LINE_LENGTH, MAX_LINE_LENGTH);
     if(data->fh)
     {
         proc_file_name = FileHandlerGetFileName(file_name, STAGE_PRE_PROC); /* uses malloc */  

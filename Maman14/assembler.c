@@ -86,7 +86,7 @@ int InitAssemblerData(SAssemblerData *data)
 {
     int ret_val = FALSE;
 
-    data->fh = FileHandlerCreate(MAX_LINE_LENGTH, MAX_LABEL_NAME);
+    data->fh = FileHandlerCreate(MAX_LINE_LENGTH, MAX_LINE_LENGTH);
     
     if(data->fh)
     {
@@ -134,9 +134,11 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
         
         if(CheckNewLabel(data)) /* true means continue parsing line */
         {
-            data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
-            instruction = ParserIsDataString(data->fh->word);
+            if(data->lbl)
+                data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
             
+            instruction = ParserIsDataString(data->fh->word);
+
             if(data->lbl)
                 AddLabelTypeCodeData(data, instruction);
 
@@ -279,7 +281,7 @@ void HandleCode(SAssemblerData *data)
 {
     int func = FALSE;
 
-    data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
+    //data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
     func = ParserIsFunction(data->fh->word);
 
     if(func)
