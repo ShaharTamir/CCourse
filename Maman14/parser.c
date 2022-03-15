@@ -14,7 +14,6 @@
 #define POS '+'
 #define NEG '-'
 #define NUM_SEPARATOR ','
-#define LAST_CHAR_OFFSET_FROM_STR_END 2
 #define MAX_NUMBER 
 
 extern const SFunctions g_func_names[NUM_FUNCTIONS];
@@ -204,7 +203,7 @@ int ParserIsValidString(char *line, int index, int line_len)
 
     if(line[index] == STRING_DEF)
     {
-        end_string_index = ReverseSkipSpaces(line, line_len - LAST_CHAR_OFFSET_FROM_STR_END);
+        end_string_index = ReverseSkipSpaces(line, line_len - 1);
 
         if(end_string_index > index && line[end_string_index] == STRING_DEF)
         {

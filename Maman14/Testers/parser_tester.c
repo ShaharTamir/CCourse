@@ -6,8 +6,9 @@
 static void TestValidName(TestStatusType*);
 static void TestIsLabel(TestStatusType*);
 static void TestValidData(TestStatusType*);
+static void TestValidString(TestStatusType*);
 
-TestFunction tests[] = {TestValidName, TestIsLabel, TestValidData};
+TestFunction tests[] = {TestValidName, TestIsLabel, TestValidData, TestValidString};
 
 int main()
 {
@@ -96,4 +97,37 @@ void TestValidData(TestStatusType *status)
 
     PrepareForTest("check invalid array - end with num-separator gaps", status);
     CheckResult(!ParserIsValidData(invalid_array2, 0, strlen(invalid_array2)), __LINE__, status);
+}
+
+void TestValidString(TestStatusType *status)
+{
+    char valid_string[] = {" \"  7  \"  \"\0"};
+    char valid_string2[] = {"\" -1,  +7  ,  2   ,+6 \"      \0"};
+    char valid_string3[] = {"\"    \"\0"};
+    char invalid_string[] = {"\"\0"};
+    char invalid_string2[] = {"7 l \"\0"};
+    char invalid_string3[] = {"\",7  l   \0"};
+    char invalid_string4[] = {"1, 2, 3\0"};
+
+    PrintTestSubject("VALIDATE DATA");
+    PrepareForTest("valid string with \" in middle and last char is closing", status);
+    CheckResult(ParserIsValidString(valid_string, 0, strlen(valid_string)), __LINE__, status);
+
+    PrepareForTest("valid string closer and delim have gaps ", status);
+    CheckResult(ParserIsValidString(valid_string2, 0, strlen(valid_string2)), __LINE__, status);
+
+    PrepareForTest("valid string - empty. string closer is next to delim", status);
+    CheckResult(ParserIsValidString(valid_string3, 0, strlen(valid_string3)), __LINE__, status);
+
+    PrepareForTest("invalid string - only open, no other chars", status);
+    CheckResult(!ParserIsValidString(invalid_string, 0, strlen(invalid_string)), __LINE__, status);
+
+    PrepareForTest("invalid string - only close - other data before", status);
+    CheckResult(!ParserIsValidString(invalid_string2, 0, strlen(invalid_string2)), __LINE__, status);
+
+    PrepareForTest("invalid string - open, no close, with data in middle", status);
+    CheckResult(!ParserIsValidString(invalid_string3, 0, strlen(invalid_string3)), __LINE__, status);
+
+    PrepareForTest("invalid string - no string at all", status);
+    CheckResult(!ParserIsValidString(invalid_string4, 0, strlen(invalid_string4)), __LINE__, status);
 }
