@@ -61,10 +61,11 @@ void RunAssembler(FILE *in, char *file_name)
 
         if(status)
         {
-            printf("num code blocks: %d success!!!\n", data.instruct_count);
-            printf("expected: \
+            printf("num code blocks: %d \
+                  \nnum data blocks: %d - success!!!\n", data.instruct_count, data.data_count);
+            /*printf("expected: \
                 \n3 = 4\n4 = 7\n5 = 11\n6 = 13\n7 = 17\n8 = 19 \
-                \n9 = 23\n10 = 28\n11 = 32\n12 = 36\n13 = 40\n14 = 41\n");
+                \n9 = 23\n10 = 28\n11 = 32\n12 = 36\n13 = 40\n14 = 41\n");*/
             /*
                 OpenEntryFile();
                 if(open)
@@ -148,7 +149,6 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
 
             if(instruction)
             {
-                /* TODO: ++data_counter */
                 if(INST_STRING == instruction)
                     HandleString(data);
                 else
@@ -156,7 +156,6 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
             }
             else
             {
-                /* TODO: ++code_counter */
                 HandleCode(data);
             }
         }
@@ -269,7 +268,14 @@ int AddLabelTypeCodeData(SAssemblerData *data, int instruction)
 
 void HandleString(SAssemblerData *data)
 {
-    if(!ParserIsValidString(data->fh->line, data->fh->index, data->fh->bytes_read))
+    int string_len = 0;
+    string_len = ParserIsValidString(data->fh->line, data->fh->index, data->fh->bytes_read);
+    
+    if(string_len) /* not 0 means valid */
+    {
+         data->data_count += string_len;
+    }
+    else
     {
         ERR_AT("string is not valid", data->fh->line_count);
         data->status = FALSE;
@@ -278,7 +284,11 @@ void HandleString(SAssemblerData *data)
 
 void HandleData(SAssemblerData *data)
 {
-    if(!ParserIsValidData(data->fh->line, data->fh->index, data->fh->bytes_read))
+    if(ParserIsValidData(data->fh->line, data->fh->index, data->fh->bytes_read))
+    {
+        data->data_count += ParserCountSeparators(data->fh->line, data->fh->index, data->fh->bytes_read) + 1;
+    }
+    else
     {
         ERR_AT("data is not valid", data->fh->line_count);
         data->status = FALSE;

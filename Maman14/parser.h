@@ -70,7 +70,7 @@ int ParserValidateName(char *name);
 /* verify only the end of word is valid index access "[r1X]", X == [0-5]*/
 int ParserValidateIndex(char *word);
 
-/* verify string is valid */
+/* verify string is valid - if true return string length */
 int ParserIsValidString(char *line, int index, int line_len);
 
 /* 

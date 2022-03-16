@@ -335,9 +335,10 @@ int ParserIsValidString(char *line, int index, int line_len)
     {
         end_string_index = ReverseSkipSpaces(line, line_len - 1);
 
-        if(end_string_index > index && line[end_string_index] == STRING_DEF)
+        if(end_string_index > index + 1 && /* string is not empty */
+            line[end_string_index] == STRING_DEF) /* and closed */
         {
-            ret_val = TRUE;
+            ret_val = end_string_index - index;
         }
     }
 
