@@ -9,6 +9,7 @@
 #include "file_handler.h"
 #include "parser.h"
 #include "label.h"
+#include "function.h"
 #include "assembler.h"
 
 #define MEM_ADD_OFFSET 100
@@ -163,18 +164,22 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
 
 int CheckNewLabel(SAssemblerData *data)
 {
-    int continue_read_line = TRUE;
+    int continue_read_line = FALSE;
     int instruct = FALSE;
 
     if(ParserIsNewLabel(data->fh->word))
     {
+        continue_read_line = TRUE;
         HandleNewLabelDef(data);
     }
     else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word)))
     {
         /*DELETE printf("instruction: %s\n", data->fh->word); */
         HandleNewInstructDef(data, instruct);
-        continue_read_line = FALSE;
+    }
+    else if(data->fh->bytes_read != EOF)
+    {
+        continue_read_line = TRUE;
     }
 
     return continue_read_line;
@@ -281,16 +286,19 @@ void HandleCode(SAssemblerData *data)
 {
     int func = FALSE;
 
-    //data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
     func = ParserIsFunction(data->fh->word);
 
     if(func)
     {
-        data->status = FunctionValidateFunc(data->fh, func);
+        if(!FunctionValidateFunc(data->fh, func))
+        {
+            ERR_AT("invalid function parameters", data->fh->line_count);
+            data->status = FALSE;
+        }
     }
     else
     {
-        ERR_AT("function is missing", data->fh->line_count);
+        ERR_AT("invalid line - function is missing", data->fh->line_count);
         data->status = FALSE;
     }
 }

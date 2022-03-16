@@ -3,6 +3,7 @@
 
 #define MAX_LINE_LENGTH 81 /* including \n and \0 at end of line */
 #define MAX_LABEL_NAME 31
+#define INDEX_LENGTH 5 
 #define NUM_FUNCTIONS 16
 #define NUM_INSTRUCTIONS 4
 #define NUM_REGISTERS 16
@@ -12,8 +13,8 @@
 
 #include <colors.h>
 
-#define ERR(string) printf("%serror: %s%s\n", CLR_RED, string, CLR_WHT)
-#define ERR_AT(string, line) printf("%serror: %s at: %s%d%s\n", CLR_RED, string, CLR_YEL, line, CLR_WHT)
+#define ERR(string) printf("%serror: %s%s\n", CLR_RED, string, CLR_RESET)
+#define ERR_AT(string, line) printf("%serror: %s at: %s%d%s\n", CLR_RED, string, CLR_YEL, line, CLR_RESET)
 
 typedef struct 
 {
@@ -39,7 +40,7 @@ typedef enum
     RED,
     PRN,
     RTS,
-    STOP,
+    STP,
     NUM_EFUNCS
 } EFunc;
 

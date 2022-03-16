@@ -13,8 +13,10 @@
 #define STRING_DEF '"'
 #define POS '+'
 #define NEG '-'
-#define NUM_SEPARATOR ','
-#define MAX_NUMBER 
+#define NUM_START '#'
+#define SEPARATOR ','
+#define OPEN_INDEX '['
+#define CLOSE_INDEX ']'
 
 extern const SFunctions g_func_names[NUM_FUNCTIONS];
 extern const char *g_registers[NUM_REGISTERS];
@@ -133,6 +135,91 @@ int ParserIsRegister(char *word)
     return FALSE;
 }
 
+int ParserIsIndex(char *word)
+{
+    int len = 0;
+
+    len = strlen(word);
+
+    return word[len - 1] == CLOSE_INDEX;
+}
+
+int ParserIsNumber(char *word)
+{
+    int i = 0;
+
+    if(word[i] == NUM_START)
+    {
+        ++i;
+        
+        if(word[i] == POS || word[i] == NEG)
+            ++i;
+
+        while(isdigit(word[i]))
+        {
+            ++i;
+        }
+        
+        if(word[i] == DELIMITER)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+int ParserSkipSeparator(char *line, int curr_index, int line_len)
+{
+    curr_index = SkipSpaces(line, curr_index, line_len);
+    
+    if(line[curr_index] == SEPARATOR)
+        return curr_index + 1;
+
+    return curr_index;
+}
+
+void ParserCleanSeparator(char *word)
+{
+    int len = 0;
+
+    len = strlen(word);
+    word[len - 1] = word[len - 1] == SEPARATOR ? DELIMITER : word[len - 1];
+}
+
+int ParserExtractIndexFromWord(char *word, char *index_container)
+{
+    int len = 0;
+    int i = 0;
+    int j = 0;
+
+    /* separate between name of label and register index */
+    len = strlen(word);
+    
+    while(i < len && word[i] != OPEN_INDEX && /* collect name before first '[' */
+        i < MAX_LABEL_NAME)
+    {
+        ++i;
+    }
+
+    if(i == len)
+        return FALSE;
+    
+    word[i++] = DELIMITER;
+    index_container[j++] = OPEN_INDEX;
+
+    while(i < len && j < INDEX_LENGTH)
+    {
+        index_container[j] = word[i];
+        ++j;
+        ++i;
+    }
+
+    index_container[j] = DELIMITER;
+    
+    return i == len;
+    /* if word is finished then the index length is right,
+     and there are no other invalid chars after index */
+}
+
 int ParserNextWord(char *line, char *word, int curr_index, int line_len)
 {
     int i = 0;
@@ -156,7 +243,20 @@ int ParserIsMoreWords(char *line, int curr_index, int line_len)
 {
     curr_index = SkipSpaces(line, curr_index, line_len);
 
-    return curr_index == line_len - 1;
+    return curr_index < line_len - 1;
+}
+
+int ParserCountSeparators(char *line, int curr_index, int line_len)
+{
+    int count = 0;
+
+    for(; curr_index < line_len; ++curr_index)
+    {
+        if(line[curr_index] == SEPARATOR)
+            ++count;
+    }
+
+    return count;
 }
 
 int ParserValidateName(char *name)
@@ -192,6 +292,36 @@ int ParserValidateName(char *name)
     }
 
     return ret_val;
+}
+
+int ParserValidateIndex(char *word)
+{
+    char valid_chars[] = {']', 'd', '1', 'r', '['}; /* 'd' is for dummy */
+    char valid_reg[] = {'0', '1', '2', '3', '4', '5'};
+    int end = 0;
+    int count = 0;
+    int i = 0;
+
+    end = strlen(word) - 1;
+
+    for(count = 0; count < sizeof(valid_chars); ++count)
+    {
+        if(count == 1)
+        {
+            for(i = 0; i < sizeof(valid_reg); ++i)
+            {
+                if(word[end - count] == valid_reg[i])
+                    break;
+            }
+
+            if(i == sizeof(valid_reg))
+                return FALSE;
+        }
+        else if(word[end - count] != valid_chars[count])
+            return FALSE;
+    }
+
+    return TRUE;
 }
 
 int ParserIsValidString(char *line, int index, int line_len)
@@ -235,7 +365,7 @@ int ParserIsValidData(char *line, int index, int line_len)
             }
 
             index = SkipSpaces(line, index, line_len);
-            if(line[index] == NUM_SEPARATOR)
+            if(line[index] == SEPARATOR)
             {
                 expect_num = TRUE;
                 ++index;

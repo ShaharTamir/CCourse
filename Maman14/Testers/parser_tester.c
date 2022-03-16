@@ -7,8 +7,9 @@ static void TestValidName(TestStatusType*);
 static void TestIsLabel(TestStatusType*);
 static void TestValidData(TestStatusType*);
 static void TestValidString(TestStatusType*);
+static void TestValidIndex(TestStatusType*);
 
-TestFunction tests[] = {TestValidName, TestIsLabel, TestValidData, TestValidString};
+TestFunction tests[] = {TestValidName, TestIsLabel, TestValidData, TestValidString, TestValidIndex};
 
 int main()
 {
@@ -130,4 +131,29 @@ void TestValidString(TestStatusType *status)
 
     PrepareForTest("invalid string - no string at all", status);
     CheckResult(!ParserIsValidString(invalid_string4, 0, strlen(invalid_string4)), __LINE__, status);
+}
+
+void TestValidIndex(TestStatusType *status)
+{
+    char valid_index[] = {"[r10]\0"};
+    char valid_index2[] = {"[r15]\0"};
+    char invalid_index[] = {"[r16]\0"};
+    char invalid_index2[] = {"[r1]\0"};
+    char invalid_index3[] = {"1]\0"};
+
+    PrintTestSubject("VALIDATE INDEX ACCESS");
+    PrepareForTest("valid first index", status);
+    CheckResult(ParserValidateIndex(valid_index), __LINE__, status);
+
+    PrepareForTest("valid last index", status);
+    CheckResult(ParserValidateIndex(valid_index2), __LINE__, status);
+
+    PrepareForTest("invalid index - not a register", status);
+    CheckResult(!ParserValidateIndex(invalid_index), __LINE__, status);
+
+    PrepareForTest("invalid index - not a valid index register", status);
+    CheckResult(!ParserValidateIndex(invalid_index2), __LINE__, status);
+
+    PrepareForTest("invalid index - check memory leaks", status);
+    CheckResult(!ParserValidateIndex(invalid_index3), __LINE__, status);
 }

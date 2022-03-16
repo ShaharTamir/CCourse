@@ -36,14 +36,39 @@ int ParserIsFunction(char *word);
 /* return register index + 1 if next word is a register */
 int ParserIsRegister(char *word);
 
+/* return TRUE if word ends with index bracket: ']' */
+int ParserIsIndex(char *word);
+
+/* return if word is a direct number - #num (example: #-7) */
+int ParserIsNumber(char *word);
+
+/* if found separator - return the next char index.
+   else - return char index of the next word */
+int ParserSkipSeparator(char *line, int curr_index, int line_len);
+
+/* cleans separator (if exist) from end of word */
+void ParserCleanSeparator(char *word);
+
+/* split word into name and index words index word is saved into index_container.
+   If name or index is longer then valid - the function return false.
+   It is user responsibility to provide a valid index_container.
+*/
+int ParserExtractIndexFromWord(char *word, char *index_container);
+
 /* extract next word from line. return the updated curr_index */
 int ParserNextWord(char *line, char *word, int curr_index, int line_len);
 
 /* return TRUE if there are more words after curr index */
 int ParserIsMoreWords(char *line, int curr_index, int line_len);
 
+/* return number of separators to count num of parameters to expect */
+int ParserCountSeparators(char *line, int curr_index, int line_len);
+
 /* verify name is not a function and that contains only alphabet characters. */
 int ParserValidateName(char *name);
+
+/* verify only the end of word is valid index access "[r1X]", X == [0-5]*/
+int ParserValidateIndex(char *word);
 
 /* verify string is valid */
 int ParserIsValidString(char *line, int index, int line_len);
