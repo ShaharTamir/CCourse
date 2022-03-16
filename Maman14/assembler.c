@@ -61,7 +61,10 @@ void RunAssembler(FILE *in, char *file_name)
 
         if(status)
         {
-            printf("success!!!\n");
+            printf("num code blocks: %d success!!!\n", data.instruct_count);
+            printf("expected: \
+                \n3 = 4\n4 = 7\n5 = 11\n6 = 13\n7 = 17\n8 = 19 \
+                \n9 = 23\n10 = 28\n11 = 32\n12 = 36\n13 = 40\n14 = 41\n");
             /*
                 OpenEntryFile();
                 if(open)
@@ -290,11 +293,14 @@ void HandleCode(SAssemblerData *data)
 
     if(func)
     {
-        if(!FunctionValidateFunc(data->fh, func))
+        if(!FunctionValidateFunc(data->fh, &data->instruct_count, func))
         {
             ERR_AT("invalid function parameters", data->fh->line_count);
             data->status = FALSE;
         }
+
+        printf("line: %d, instruct_count: %d\n", data->fh->line_count, data->instruct_count);
+
     }
     else
     {

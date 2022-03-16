@@ -4,8 +4,12 @@
 #include "parser.h"
 #include "function.h"
 
-
-#define VALID_REG_INDEX_LEN 3
+typedef struct
+{
+    int acc_meth_a;
+    int acc_meth_b;
+    SFileHandlerData *fh;
+}SFunctionHandlerData;
 
 /*****************************************************************
  *                      FUNCTION GROUPS
@@ -24,57 +28,57 @@
 
 /* add to group the bit of acc_meth (group is bit field */
 static int AddAccessMethToGroup(int group, EAccessMeth acc_meth);
+static int CalcCodeLines(SFunctionHandlerData *fhd, int func);
+static int ConvMethAccToBlks(int meth, int is_funct);
 
-static int ValidateOneVariable(SFileHandlerData *fh, int groups);
-static int ValidateTwoVariable(SFileHandlerData *fh, int groups_a, int groups_b);
+static int ValidateOneVariable(SFunctionHandlerData *fhd, int groups);
+static int ValidateTwoVariable(SFunctionHandlerData *fhd, int groups_a, int groups_b);
 
-static int ValidateGroupOne(SFileHandlerData *fh);
-static int ValidateGroupTwo(SFileHandlerData *fh);
-static int ValidateGroupThree(SFileHandlerData *fh);
-static int ValidateGroupFour(SFileHandlerData *fh);
-static int ValidateGroupFive(SFileHandlerData *fh);
-static int ValidateGroupSix(SFileHandlerData *fh);
-static int ValidateGroupSeven(SFileHandlerData *fh);
+static int ValidateGroupOne(SFunctionHandlerData *fhd);
+static int ValidateGroupTwo(SFunctionHandlerData *fhd);
+static int ValidateGroupThree(SFunctionHandlerData *fhd);
+static int ValidateGroupFour(SFunctionHandlerData *fhd);
+static int ValidateGroupFive(SFunctionHandlerData *fhd);
+static int ValidateGroupSix(SFunctionHandlerData *fhd);
+static int ValidateGroupSeven(SFunctionHandlerData *fhd);
 
-int FunctionValidateFunc(SFileHandlerData *fh, int func)
+int FunctionValidateFunc(SFileHandlerData *fh, int *num_encode_blocks, int func)
 {
+    SFunctionHandlerData fhd;
     int ret_val = FALSE;
+
+    fhd.acc_meth_a = 0;
+    fhd.acc_meth_b = 0;
+    fhd.fh = fh;
 
     switch(func)
     {
         case CMP:
-            ret_val = ValidateGroupOne(fh);
+            ret_val = ValidateGroupOne(&fhd);
             break;
-        case MOV:
-        case ADD:
-        case SUB:
-            ret_val = ValidateGroupTwo(fh);
+        case MOV: case ADD:  case SUB:
+            ret_val = ValidateGroupTwo(&fhd);
             break;
         case LEA:
-            ret_val = ValidateGroupThree(fh);
+            ret_val = ValidateGroupThree(&fhd);
             break;
         case PRN:
-            ret_val = ValidateGroupFour(fh);
+            ret_val = ValidateGroupFour(&fhd);
             break;
-        case CLR:
-        case NOT:
-        case INC:
-        case DEC:
-        case RED:
-            ret_val = ValidateGroupFive(fh);
+        case CLR: case NOT: case INC: case DEC: case RED:
+            ret_val = ValidateGroupFive(&fhd);
             break;
-        case JMP:
-        case BNE:
-        case JSR:
-            ret_val = ValidateGroupSix(fh);
+        case JMP: case BNE: case JSR:
+            ret_val = ValidateGroupSix(&fhd);
             break;
-        case RTS:
-        case STP:
-            ret_val = ValidateGroupSeven(fh);
+        case RTS: case STP:
+            ret_val = ValidateGroupSeven(&fhd);
             break;
         default:
             ERR_AT("invalid function", fh->line_count);
     }
+
+    *num_encode_blocks += CalcCodeLines(&fhd, func);
 
     return ret_val;
 }
@@ -84,6 +88,53 @@ int AddAccessMethToGroup(int group, EAccessMeth acc_meth)
     group |= 1 << acc_meth;
 
     return group;
+}
+
+int CalcCodeLines(SFunctionHandlerData *fhd, int func)
+{
+    int num_blks = 1; /* start with 1 for opcode line */
+
+    switch(func)
+    {
+        case MOV: case CMP: case LEA: /* 2 param no funct code */
+            num_blks += ConvMethAccToBlks(fhd->acc_meth_a, FALSE) + ConvMethAccToBlks(fhd->acc_meth_b, FALSE);
+            break;
+        case RED: case PRN: /* 1 param no funct code */
+            num_blks += ConvMethAccToBlks(fhd->acc_meth_b, FALSE);
+            break;
+        case ADD: case SUB: /* 2 param funct code */
+            ++num_blks;
+            num_blks += ConvMethAccToBlks(fhd->acc_meth_a, TRUE) + ConvMethAccToBlks(fhd->acc_meth_b, TRUE); 
+            break;
+        case CLR: case NOT: case INC: case DEC: case JMP: /* 1 param funct code */
+        case BNE: case JSR:
+            ++num_blks;
+            num_blks += ConvMethAccToBlks(fhd->acc_meth_b, TRUE);
+            break;
+    }
+
+    return num_blks;
+}
+
+int ConvMethAccToBlks(int meth, int is_funct)
+{
+    int sum = 0;
+
+    switch(meth)
+    {
+        case AC_IMMEDIATE:
+        case AC_DIRECT:
+            sum += 2;
+            break;
+        case AC_INDEX:
+            sum += 3 - is_funct;
+            break;
+        case AC_REG:
+            sum += 1 - is_funct;
+            break;
+    }
+
+    return sum;
 }
 
 int GetAccessingMethod(char *word)
@@ -108,49 +159,49 @@ int GetAccessingMethod(char *word)
     return FALSE;
 }
 
-int ValidateOneVariable(SFileHandlerData *fh, int groups)
+int ValidateOneVariable(SFunctionHandlerData *fhd, int groups)
 {
     int acc_meth = 0;
 
-    if(ParserIsMoreWords(fh->line, fh->index, fh->bytes_read) && 
-        !ParserCountSeparators(fh->line, fh->index, fh->bytes_read))
+    if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) && 
+        !ParserCountSeparators(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read))
     {
-        fh->index = ParserNextWord(fh->line, fh->word, fh->index, fh->bytes_read);
-        acc_meth = GetAccessingMethod(fh->word);
-        printf("access_meth group_b: %d\n", acc_meth);
-
-        return !ParserIsMoreWords(fh->line, fh->index, fh->bytes_read) &&
+        fhd->fh->index = ParserNextWord(fhd->fh->line, fhd->fh->word, fhd->fh->index, fhd->fh->bytes_read);
+        acc_meth = GetAccessingMethod(fhd->fh->word);        
+        fhd->acc_meth_b = acc_meth;
+        
+        return !ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) &&
             ((1 << acc_meth) & groups) != 0;
     }
 
     return FALSE;
 }
 
-int ValidateTwoVariable(SFileHandlerData *fh, int group_a, int group_b)
+int ValidateTwoVariable(SFunctionHandlerData *fhd, int group_a, int group_b)
 {
     int acc_meth = 0;
 
-    if(ParserIsMoreWords(fh->line, fh->index, fh->bytes_read) && 
-        1 == ParserCountSeparators(fh->line, fh->index, fh->bytes_read))
+    if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) && 
+        1 == ParserCountSeparators(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read))
     {
-        fh->index = ParserNextWord(fh->line, fh->word, fh->index, fh->bytes_read);
-        ParserCleanSeparator(fh->word);
-        acc_meth = GetAccessingMethod(fh->word);
-        printf("access_meth group_a: %d\n", acc_meth);
+        fhd->fh->index = ParserNextWord(fhd->fh->line, fhd->fh->word, fhd->fh->index, fhd->fh->bytes_read);
+        ParserCleanSeparator(fhd->fh->word);
+        acc_meth = GetAccessingMethod(fhd->fh->word);
+        fhd->acc_meth_a = acc_meth;
+        /*printf("access_meth group_a: %d\n", acc_meth);*/
 
-        if(ParserIsMoreWords(fh->line, fh->index, fh->bytes_read) && 
+        if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) && 
             ((1 << acc_meth) & group_a) != 0)
         {
-            fh->index = ParserSkipSeparator(fh->line, fh->index, fh->bytes_read);
-
-            return ValidateOneVariable(fh, group_b);
+            fhd->fh->index = ParserSkipSeparator(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read);
+            return ValidateOneVariable(fhd, group_b);
         }
     }
 
     return FALSE;
 }
 
-int ValidateGroupOne(SFileHandlerData *fh)
+int ValidateGroupOne(SFunctionHandlerData *fhd)
 {
     int group_a = 0;
     int group_b = 0;
@@ -165,10 +216,10 @@ int ValidateGroupOne(SFileHandlerData *fh)
     group_b = AddAccessMethToGroup(group_b, AC_INDEX);
     group_b = AddAccessMethToGroup(group_b, AC_REG);
 
-    return ValidateTwoVariable(fh, group_a, group_b);
+    return ValidateTwoVariable(fhd, group_a, group_b);
 }
 
-int ValidateGroupTwo(SFileHandlerData *fh)
+int ValidateGroupTwo(SFunctionHandlerData *fhd)
 {
     int group_a = 0;
     int group_b = 0;
@@ -182,10 +233,10 @@ int ValidateGroupTwo(SFileHandlerData *fh)
     group_b = AddAccessMethToGroup(group_b, AC_INDEX);
     group_b = AddAccessMethToGroup(group_b, AC_REG);
 
-    return ValidateTwoVariable(fh, group_a, group_b);
+    return ValidateTwoVariable(fhd, group_a, group_b);
 }
 
-int ValidateGroupThree(SFileHandlerData *fh)
+int ValidateGroupThree(SFunctionHandlerData *fhd)
 {
     int group_a = 0;
     int group_b = 0;
@@ -197,10 +248,10 @@ int ValidateGroupThree(SFileHandlerData *fh)
     group_b = AddAccessMethToGroup(group_b, AC_INDEX);
     group_b = AddAccessMethToGroup(group_b, AC_REG);
 
-    return ValidateTwoVariable(fh, group_a, group_b);
+    return ValidateTwoVariable(fhd, group_a, group_b);
 }
 
-int ValidateGroupFour(SFileHandlerData *fh)
+int ValidateGroupFour(SFunctionHandlerData *fhd)
 {
     int group = 0;
 
@@ -209,10 +260,10 @@ int ValidateGroupFour(SFileHandlerData *fh)
     group = AddAccessMethToGroup(group, AC_INDEX);
     group = AddAccessMethToGroup(group, AC_REG);
     
-    return ValidateOneVariable(fh, group);
+    return ValidateOneVariable(fhd, group);
 }
 
-int ValidateGroupFive(SFileHandlerData *fh)
+int ValidateGroupFive(SFunctionHandlerData *fhd)
 {
     int group = 0;
 
@@ -220,20 +271,20 @@ int ValidateGroupFive(SFileHandlerData *fh)
     group = AddAccessMethToGroup(group, AC_INDEX);
     group = AddAccessMethToGroup(group, AC_REG);
     
-    return ValidateOneVariable(fh, group);
+    return ValidateOneVariable(fhd, group);
 }
 
-int ValidateGroupSix(SFileHandlerData *fh)
+int ValidateGroupSix(SFunctionHandlerData *fhd)
 {
     int group = 0;
 
     group = AddAccessMethToGroup(group, AC_DIRECT);
     group = AddAccessMethToGroup(group, AC_INDEX);
     
-    return ValidateOneVariable(fh, group);
+    return ValidateOneVariable(fhd, group);
 }
 
-int ValidateGroupSeven(SFileHandlerData *fh)
+int ValidateGroupSeven(SFunctionHandlerData *fhd)
 {
-    return !ParserIsMoreWords(fh->line, fh->index, fh->bytes_read);
+    return !ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read);
 }

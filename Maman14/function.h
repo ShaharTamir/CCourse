@@ -11,7 +11,7 @@ typedef enum
     AC_REG
 }EAccessMeth;
 
-int FunctionValidateFunc(SFileHandlerData *fh, int func);
+int FunctionValidateFunc(SFileHandlerData *fh, int *num_encode_blocks, int func);
 
 int GetAccessingMethod(char *word);
 
