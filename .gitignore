@@ -1,6 +1,10 @@
-*.o
-*.dll
-*.so
-*.a
-*.out
-*.exe
+*
+!/**/
+
+!*.c
+!.gitignore
+![mM]ake*
+!*.h
+!*.cpp
+!*.hpp
+!*.md
