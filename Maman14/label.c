@@ -79,6 +79,8 @@ void LabelSetMemAddress(SLabel *lbl, int mem_address)
 
     lbl->offset = mem_address % MEM_MOD;
     lbl->base_address = mem_address - lbl->offset;
+
+    printf("\nlabel %s is defined at: %d\nwhich is: %d and offset: %d\n", lbl->name, mem_address, lbl->base_address, lbl->offset);
 }
 
 void LabelSetName(SLabel *lbl, char *name)

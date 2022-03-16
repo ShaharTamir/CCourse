@@ -176,7 +176,6 @@ int CheckNewLabel(SAssemblerData *data)
     }
     else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word)))
     {
-        /*DELETE printf("instruction: %s\n", data->fh->word); */
         HandleNewInstructDef(data, instruct);
     }
     else if(data->fh->bytes_read != EOF)
@@ -193,15 +192,13 @@ void HandleNewLabelDef(SAssemblerData *data)
 
     if(ParserValidateName(data->fh->word) && NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
     {
-        /*DELETE printf("new symbol: %s\n",data->fh->word);*/
         data->lbl = AddLabelToSymTable(data);
-        /* TODO: LabelSetMemAddress(lbl,  + MEM_ADD_OFFSET); */
+        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count + MEM_ADD_OFFSET);
     }
-    else if(iter && LabelIsEntry(iter->data))
+    else if(iter && LabelIsEntry(iter->data)) /* label is defined only as entry but not yet defined */
     {
         data->lbl = iter->data;
-        /*DELETE printf("entry symbol is defined: %s\n", data->fh->word);*/
-        /* TODO: LabelSetMemAddress(lbl,  + MEM_ADD_OFFSET); */
+        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count + MEM_ADD_OFFSET);
     }
     else
     {
@@ -215,7 +212,6 @@ void HandleNewInstructDef(SAssemblerData *data, int instruct)
     SNode *iter = NULL;
 
     data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
-    /*DELETE printf("label: %s\n", data->fh->word);*/
     if(ParserValidateName(data->fh->word))
     {
         if(NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
@@ -269,8 +265,8 @@ int AddLabelTypeCodeData(SAssemblerData *data, int instruction)
 void HandleString(SAssemblerData *data)
 {
     int string_len = 0;
-    string_len = ParserIsValidString(data->fh->line, data->fh->index, data->fh->bytes_read);
     
+    string_len = ParserIsValidString(data->fh->line, data->fh->index, data->fh->bytes_read);
     if(string_len) /* not 0 means valid */
     {
          data->data_count += string_len;
