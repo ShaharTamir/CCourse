@@ -31,11 +31,15 @@ int main(int argc, char *argv[])
             {
                 file_name = FileHandlerGetFileName(argv[1], STAGE_PRE_PROC);
                 input = FileHandlerOpenFile(file_name, "r");
+                
+                free(file_name);
+                file_name = NULL;
 
                 if(input)
                 {
                     RunAssembler(input, argv[1]);
                     fclose(input);
+
                 }
                 else {}
                 /* could not open the processed file (reach here is very bad..) */

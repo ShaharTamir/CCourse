@@ -1,6 +1,6 @@
 
 #define _GNU_SOURCE
-#include <stdio.h> /* FILE */
+#include <stdio.h> /* FILE, fseek */
 
 #include <node.h>
 #include <linked_list.h>
@@ -10,6 +10,7 @@
 #include "parser.h"
 #include "label.h"
 #include "function.h"
+#include "encoder.h"
 #include "assembler.h"
 
 #define MEM_ADD_OFFSET 100
@@ -41,6 +42,8 @@ static void DestroyAssemblerData(SAssemblerData *data);
         the standard output.
  */
 static int DefineSymbolTable(FILE *in, SAssemblerData *data);
+
+/* FIRST CYCLE FUNCTIONS */
 static int CheckNewLabel(SAssemblerData *data);
 static void HandleNewLabelDef(SAssemblerData *data);
 static void HandleNewInstructDef(SAssemblerData *data, int instruct);
@@ -53,6 +56,7 @@ static void HandleCode(SAssemblerData *data);
 void RunAssembler(FILE *in, char *file_name)
 {
     SAssemblerData data;
+    SEncoderData en_data;
     int status = 0;
 
     if(InitAssemblerData(&data))
@@ -61,26 +65,31 @@ void RunAssembler(FILE *in, char *file_name)
 
         if(status)
         {
-            printf("num code blocks: %d \
+            fseek(in, 0, SEEK_SET); /* reset file to begin */
+            if(InitEncoderData(data.fh, data.sym_table, &en_data, file_name))
+            {
+                en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
+
+                while(en_data.fh->bytes_read != EOF)
+                {
+                    ++en_data.fh->line_count;
+                    en_data.fh->index = 0;
+                    if(!EncodeLine(&en_data))
+                    {
+                        fcloseall();
+                        FileHandlerRemoveAll(file_name);
+                        break;
+                    }
+                    en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
+                }
+            }
+
+            DestroyEncoderData(&en_data);
+            /*printf("num code blocks: %d \
                   \nnum data blocks: %d - success!!!\n", data.instruct_count, data.data_count);
-            /*printf("expected: \
+            printf("expected: \
                 \n3 = 4\n4 = 7\n5 = 11\n6 = 13\n7 = 17\n8 = 19 \
                 \n9 = 23\n10 = 28\n11 = 32\n12 = 36\n13 = 40\n14 = 41\n");*/
-            /*
-                OpenEntryFile();
-                if(open)
-                {
-                    WriteEntryFile();
-                }
-                closeEntryFile();
-
-                OpenExternFile();
-                if(open)
-                {
-                    WriteExternFile();
-                }
-
-            */
         }
     }
 
@@ -100,6 +109,7 @@ int InitAssemblerData(SAssemblerData *data)
         if(data->sym_table)
         {
             ret_val = TRUE;
+            data->status = TRUE;
             data->data_count = 0;
             data->instruct_count = 0;
             data->lbl = NULL;
@@ -304,9 +314,7 @@ void HandleCode(SAssemblerData *data)
             ERR_AT("invalid function parameters", data->fh->line_count);
             data->status = FALSE;
         }
-
-        printf("line: %d, instruct_count: %d\n", data->fh->line_count, data->instruct_count);
-
+        /* DELETE printf("line: %d, instruct_count: %d\n", data->fh->line_count, data->instruct_count); */
     }
     else
     {
