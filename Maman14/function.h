@@ -11,8 +11,10 @@ typedef enum
     AC_REG
 }EAccessMeth;
 
+/* check if function and given parameters are valid and update num of encode instructions blk  */
 int FunctionValidateFunc(SFileHandlerData *fh, int *num_encode_blocks, int func);
 
-int GetAccessingMethod(char *word);
+/* returns the accessing method of word. Use this only after know valid! */
+EAccessMeth FunctionGetAccessingMethod(char *word);
 
 #endif /* __FUNCTIONS_H__ */

@@ -30,6 +30,7 @@ typedef struct
 static int AddAccessMethToGroup(int group, EAccessMeth acc_meth);
 static int CalcCodeLines(SFunctionHandlerData *fhd, int func);
 static int ConvMethAccToBlks(int meth, int is_funct);
+static int GetIsValidAccessingMethod(char *word);
 
 static int ValidateOneVariable(SFunctionHandlerData *fhd, int groups);
 static int ValidateTwoVariable(SFunctionHandlerData *fhd, int groups_a, int groups_b);
@@ -42,7 +43,7 @@ static int ValidateGroupFive(SFunctionHandlerData *fhd);
 static int ValidateGroupSix(SFunctionHandlerData *fhd);
 static int ValidateGroupSeven(SFunctionHandlerData *fhd);
 
-int FunctionValidateFunc(SFileHandlerData *fh, int *num_encode_blocks, int func)
+int FunctionValidateFunc(SFileHandlerData *fh, int *num_instructions, int func)
 {
     SFunctionHandlerData fhd;
     int ret_val = FALSE;
@@ -78,7 +79,7 @@ int FunctionValidateFunc(SFileHandlerData *fh, int *num_encode_blocks, int func)
             ERR_AT("invalid function", fh->line_count);
     }
 
-    *num_encode_blocks += CalcCodeLines(&fhd, func);
+    *num_instructions += CalcCodeLines(&fhd, func);
 
     return ret_val;
 }
@@ -137,7 +138,18 @@ int ConvMethAccToBlks(int meth, int is_funct)
     return sum;
 }
 
-int GetAccessingMethod(char *word)
+EAccessMeth FunctionGetAccessingMethod(char *word)
+{
+    if(ParserIsNumber(word))
+        return AC_IMMEDIATE;
+    if(ParserIsRegister(word))
+        return AC_REG;
+    if(ParserIsIndex(word))
+        return AC_INDEX;
+    return AC_DIRECT;
+}
+
+int GetIsValidAccessingMethod(char *word)
 {
     char index_word[MAX_LABEL_NAME] = {0};
 
@@ -167,7 +179,7 @@ int ValidateOneVariable(SFunctionHandlerData *fhd, int groups)
         !ParserCountSeparators(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read))
     {
         fhd->fh->index = ParserNextWord(fhd->fh->line, fhd->fh->word, fhd->fh->index, fhd->fh->bytes_read);
-        acc_meth = GetAccessingMethod(fhd->fh->word);        
+        acc_meth = GetIsValidAccessingMethod(fhd->fh->word);        
         fhd->acc_meth_b = acc_meth;
         
         return !ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) &&
@@ -186,7 +198,7 @@ int ValidateTwoVariable(SFunctionHandlerData *fhd, int group_a, int group_b)
     {
         fhd->fh->index = ParserNextWord(fhd->fh->line, fhd->fh->word, fhd->fh->index, fhd->fh->bytes_read);
         ParserCleanSeparator(fhd->fh->word);
-        acc_meth = GetAccessingMethod(fhd->fh->word);
+        acc_meth = GetIsValidAccessingMethod(fhd->fh->word);
         fhd->acc_meth_a = acc_meth;
         /*printf("access_meth group_a: %d\n", acc_meth);*/
 

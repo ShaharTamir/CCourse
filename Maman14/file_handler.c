@@ -5,7 +5,7 @@
 #include <colors.h>
 #include "file_handler.h"
 
-char *FileHandlerGetFileName(char *file_name, EProgStage stage)
+char *FileHandlerGetFileName(const char *file_name, EProgStage stage)
 {
     static char *stages_end[] = {".as", ".am", ".obj", ".ext", ".ent"};
     char *new_file_name = NULL;
@@ -34,6 +34,19 @@ FILE *FileHandlerOpenFile(const char *file_name, const char *mode)
     }
 
     return ret;
+}
+
+void FileHandlerRemoveAll(const char *file_name)
+{
+    int i = STAGE_OBJ;
+    char *new_file_name = NULL;
+
+    for(; i < NUM_PROG_STAGES; ++i)
+    {
+        new_file_name = FileHandlerGetFileName(file_name, STAGE_OBJ);
+        remove(new_file_name);
+        free(new_file_name);
+    }
 }
 
 SFileHandlerData *FileHandlerCreate(int line_len, int word_len)

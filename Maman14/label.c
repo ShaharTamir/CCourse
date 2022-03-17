@@ -79,8 +79,6 @@ void LabelSetMemAddress(SLabel *lbl, int mem_address)
 
     lbl->offset = mem_address % MEM_MOD;
     lbl->base_address = mem_address - lbl->offset;
-
-    printf("\nlabel %s is defined at: %d\nwhich is: %d and offset: %d\n", lbl->name, mem_address, lbl->base_address, lbl->offset);
 }
 
 void LabelSetName(SLabel *lbl, char *name)
@@ -110,21 +108,21 @@ int LabelSetType(SLabel *lbl, ELabelType type)
     {
         if(lbl->type == (1 << LBL_EXTERN) && LBL_EXTERN != type)
         {
-            printf("%serror: trying to add attributes to an external attributes%s", CLR_RED, CLR_WHT);
+            ERR("trying to add attributes to an external attributes");
         }
         else if(LBL_EXTERN == type && lbl->type > 0 && lbl->type != (1 << LBL_EXTERN))
         {
-            printf("%serror: trying to define .extern to an already defined symbol%s", CLR_RED, CLR_WHT);
+            ERR("trying to define .extern to an already defined symbol");
         }
         else if ((LBL_CODE == type && lbl->type & (1 << LBL_DATA)) ||
             (LBL_DATA == type && lbl->type & (1 << LBL_CODE)))
         {
-            printf("%serror: trying to define symbol with both .code and .data attributes%s", CLR_RED, CLR_WHT);
+            ERR("trying to define symbol with both .code and .data attributes");
         }
         else if((LBL_CODE == type && lbl->type & (1 << LBL_CODE)) ||
             (LBL_DATA == type && lbl->type & (1 << LBL_DATA)))
         {
-            printf("%serror: trying to define label twice with the same attributes%s", CLR_RED, CLR_WHT);
+            ERR("trying to define label twice with the same attributes");
         }
         else
         {
@@ -136,9 +134,34 @@ int LabelSetType(SLabel *lbl, ELabelType type)
     return ret_val;
 }
 
+char *LabelGetName(SLabel *lbl)
+{
+    return lbl->name;
+}
+
+int LabelGetBaseAddress(SLabel *lbl)
+{
+    return lbl->base_address;
+}
+
+int LabelGetOffset(SLabel *lbl)
+{
+    return lbl->offset;
+}
+
 int LabelIsEntry(SLabel *lbl)
 {
     return lbl->type == (1 << LBL_ENTRY);
+}
+
+int LabelIsExtern(SLabel *lbl)
+{
+    return lbl->type == (1 << LBL_EXTERN);
+}
+
+int LabelIsData(SLabel *lbl)
+{
+    return lbl->type & (1 << LBL_DATA);
 }
 
 int LabelCompareName(void *lbl, void *str, void *params)

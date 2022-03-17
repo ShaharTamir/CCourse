@@ -39,8 +39,23 @@ void LabelSetName(SLabel *lbl, char *name);
  */
 int LabelSetType(SLabel *lbl, ELabelType type);
 
+/* getter for encoding to file */
+char *LabelGetName(SLabel *lbl);
+
+/* getter for encoding to file */
+int LabelGetBaseAddress(SLabel *lbl);
+
+/* getter for encoding to file */
+int LabelGetOffset(SLabel *lbl);
+
 /* check that label is define as ONLY .entry */
 int LabelIsEntry(SLabel *lbl);
+
+/* check that label is define as ONLY .extern */
+int LabelIsExtern(SLabel *lbl);
+
+/* return true if label is defined DATA */
+int LabelIsData(SLabel *lbl);
 
 /* compare function for data structures (linked_list) */
 int LabelCompareName(void *lbl, void *str, void *params);

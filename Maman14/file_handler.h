@@ -23,9 +23,11 @@ typedef struct
     char *word;
 } SFileHandlerData;
 
-char *FileHandlerGetFileName(char *file_name, EProgStage stage);
+char *FileHandlerGetFileName(const char *file_name, EProgStage stage);
 
 FILE *FileHandlerOpenFile(const char *file_name, const char *mode);
+
+void FileHandlerRemoveAll(const char *file_name);
 
 SFileHandlerData *FileHandlerCreate(int line_len, int word_len);
 
