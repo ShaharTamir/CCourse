@@ -21,6 +21,7 @@ typedef struct
 {
     int opcode;
     int funct;
+    int num_params;
     char *name;
 } SFunctions;
 

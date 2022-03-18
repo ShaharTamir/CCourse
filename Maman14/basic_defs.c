@@ -1,8 +1,8 @@
 #include "basic_defs.h"
 
-const SFunctions g_func_names[NUM_FUNCTIONS] = { {0, 0, "mov"}, {1, 0, "cmp"}, {2, 10, "add"}, {2, 11, "sub"}, {4, 0, "lea"}, {5, 10, "clr"}, \
-     {5, 11, "not"}, {5, 12, "inc"}, {5, 13, "dec"}, {9, 10, "jmp"}, {9, 11, "bne"}, {9, 12, "jsr"}, {12, 0, "red"}, \
-     {13, 0, "prn"}, {14, 0, "rts"}, {15, 0, "stop"}};
+const SFunctions g_func_names[NUM_FUNCTIONS] = { {0, 0, 2, "mov"}, {1, 0, 2, "cmp"}, {2, 10, 2, "add"}, {2, 11, 2, "sub"}, {4, 0, 2, "lea"}, {5, 10, 1, "clr"}, \
+     {5, 11, 1, "not"}, {5, 12, 1, "inc"}, {5, 13, 1, "dec"}, {9, 10, 1, "jmp"}, {9, 11, 1, "bne"}, {9, 12, 1, "jsr"}, {12, 0, 1, "red"}, \
+     {13, 0, 1, "prn"}, {14, 0, 0, "rts"}, {15, 0, 0, "stop"}};
 
 const char *g_instructions[NUM_INSTRUCTIONS] = { ".data", ".string", ".extern", ".entry"};
 
