@@ -14,10 +14,17 @@
 #define DEC_BASE 10
 #define NUM_NIBBLES 5
 #define NIBBLE_SIZE 4
-#define INST_NIBBLE 4
+#define INST_START_BIT 16
+#define FUNCT_START_BIT 12
+#define SRC_REG_START_BIT 8
+#define SRC_ADDRESS_MODE_START_BIT 6
+#define DEST_REG_START_BIT 2
+#define DEST_ADDRESS_MODE_START_BIT 0
 #define STRING_CLOSERS 2
 #define MAX_NUM 32767
 #define MIN_NUM -32768
+
+extern const SFunctions g_func_names[NUM_FUNCTIONS];
 
 typedef enum
 {
@@ -27,7 +34,7 @@ typedef enum
 } EInstType;
 
 static int ExtractNibble(int line, int nibble_num);
-static void SetCodeInstruction(int *line, int type);
+static void SetToLine(int *line, int var, int offset);
 static void SetNum(int *line, int num);
 static void ClearLine(int *line);
 
@@ -72,13 +79,13 @@ void EncodeLblToObj(FILE *out, SLabel *lbl, int address)
 
     if(LabelIsExtern(lbl))
     {
-        SetCodeInstruction(&line, CODE_EXTERNAL);
+        SetToLine(&line, CODE_EXTERNAL, INST_START_BIT);
         EncodeLineToObjectFile(out, line, address);
         EncodeLineToObjectFile(out, line, address + 1);
     }
     else
     {
-        SetCodeInstruction(&line, CODE_RELOCATABLE);
+        SetToLine(&line, CODE_RELOCATABLE, INST_START_BIT);
         line += LabelGetBaseAddress(lbl);
         EncodeLineToObjectFile(out, line, address);
         line = line - LabelGetBaseAddress(lbl) + LabelGetOffset(lbl);
@@ -147,7 +154,7 @@ int EncodeLine(SEncoderData *ed)
 
     if(!ParserIsExtEnt(ed->fh->word)) /* skip .entry and .extern lines */
     {
-        if(ParserIsNewLabel(ed->fh->word)) /* no encode for label def */
+        if(ParserIsNewLabel(ed->fh->word)) /* no encode in obj file for label def */
         {
             ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
         }
@@ -179,7 +186,7 @@ void EncodeString(SEncoderData *ed)
     /* word is now the string */
     ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
     len = strlen(ed->fh->word) - STRING_CLOSERS;
-    SetCodeInstruction(&line, CODE_ABSOLUTE);
+    SetToLine(&line, CODE_ABSOLUTE, INST_START_BIT);
 
     for(i = 1; i <= len; ++i)
     {
@@ -200,7 +207,7 @@ void EncodeData(SEncoderData *ed)
 
     num_vars = ParserCountSeparators(ed->fh->line, ed->fh->index, ed->fh->bytes_read) + 1; /* count variables */
     ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
-    SetCodeInstruction(&line, CODE_ABSOLUTE);
+    SetToLine(&line, CODE_ABSOLUTE, INST_START_BIT);
 
     for(i = 0; i < num_vars; ++i)
     {
@@ -215,6 +222,31 @@ void EncodeData(SEncoderData *ed)
 
         ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
         ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
+    }
+}
+
+int EncodeFunction(SEncoderData *ed)
+{
+    int func_index = 0;
+    int num_param = 0;
+    int line = 0;
+
+    SetToLine(&line, CODE_ABSOLUTE, INST_START_BIT);
+    
+    /* handle opcode line */
+    func_index = ParserIsFunction(ed->fh->word);
+    SetToLine(&line, 1, g_func_names[func_index].opcode);
+    EncodeLineToObjectFile(ed->obj, line, ed->address);
+    ++ed->address;
+    
+    /* handle line 2 funct */
+    ClearLine(&line);
+    SetToLine(&line, g_func_names[func_index].funct, FUNCT_START_BIT);
+    
+    /* handle variables */
+    if(g_func_names[func_index].num_params)
+    {
+
     }
 }
 
@@ -235,9 +267,9 @@ void SetNum(int *line, int num)
     *line |= (num & num_mask);
 }
 
-void SetCodeInstruction(int *line, int type)
+void SetToLine(int *line, int var, int offset)
 {
-    *line |= (type << (NIBBLE_SIZE * (NUM_NIBBLES - 1)));
+    *line |= (var << offset);
 }
 
 void ClearLine(int *line)
