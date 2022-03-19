@@ -13,6 +13,7 @@
 #define START_ADD 100
 #define FOUR_DIG 1000
 #define DEC_BASE 10
+#define NUM_PARAMS 2
 #define NUM_NIBBLES 5
 #define NIBBLE_SIZE 4
 #define INST_START_BIT 16
@@ -82,7 +83,6 @@ void EncodeLineToObjectFile(FILE *out, int line, int *address)
     }
 
     fprintf(out, "%c%x\n", nibble_part[i], ExtractNibble(line, i));
-
     ++*address;
 }
 
@@ -109,7 +109,8 @@ void EncodeLbl(SEncoderData *ed, SLabel *lbl)
     }
 }
 
-int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *en_data, const char *file_name)
+int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *en_data, \
+                const char *file_name, int open_ent, int open_ext)
 {
     char *new_file_name = NULL;
 
@@ -117,31 +118,35 @@ int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *
     en_data->obj = FileHandlerOpenFile(new_file_name, "w");
     free(new_file_name);
 
-    if(en_data->obj)
+    if(!en_data->obj)
+        return FALSE;
+
+    if(open_ext)
     {
         new_file_name = FileHandlerGetFileName(file_name, STAGE_EXT);
         en_data->ext = FileHandlerOpenFile(new_file_name, "w");
         free(new_file_name);
-
-        if(en_data->ext)
-        {
-            new_file_name = FileHandlerGetFileName(file_name, STAGE_ENT);
-            en_data->ent = FileHandlerOpenFile(new_file_name, "w");
-            free(new_file_name);
-
-            if(en_data->ent)
-            {
-                en_data->address = START_ADD;
-                en_data->fh = fh;
-                en_data->fh->line_count = 0;
-                en_data->sym_tbl = sym_table;
-
-                return TRUE;
-            }
-        }
+        
+        if(!en_data->ext)
+            return FALSE;
     }
 
-    return FALSE;
+    if(open_ent)
+    {
+        new_file_name = FileHandlerGetFileName(file_name, STAGE_ENT);
+        en_data->ent = FileHandlerOpenFile(new_file_name, "w");
+        free(new_file_name);
+
+        if(!en_data->ent)
+            return FALSE;
+    }
+
+    en_data->address = START_ADD;
+    en_data->fh = fh;
+    en_data->fh->line_count = 0;
+    en_data->sym_tbl = sym_table;
+
+    return TRUE;
 }
 
 void DestroyEncoderData(SEncoderData *en_data)
@@ -211,6 +216,8 @@ void EncodeString(SEncoderData *ed)
         EncodeLineToObjectFile(ed->obj, line, &ed->address);
         line -= (int)(ed->fh->word[i]); /* reset line for next char */
     }
+
+    EncodeLineToObjectFile(ed->obj, line, &ed->address); /* null terminator */
 }
 
 void EncodeData(SEncoderData *ed)
@@ -268,13 +275,11 @@ void EncodeFunctLine(SEncoderData *ed, int *line, int func_index)
     int acc_bit[] = {DEST_ADDRESS_MODE_START_BIT, SRC_ADDRESS_MODE_START_BIT};
     int access_meth = 0;
     int i = 0;
-    int publish_line = FALSE;
 
     ClearLine(line);
     SetToLine(line, g_func_names[func_index].funct, FUNCT_START_BIT);
-    publish_line = g_func_names[func_index].funct;
 
-    for(i = 0; i < g_func_names[func_index].num_params; ++i)
+    for(i = g_func_names[func_index].num_params - 1; i >= 0; --i)
     {
         ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
         ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
@@ -285,19 +290,17 @@ void EncodeFunctLine(SEncoderData *ed, int *line, int func_index)
         /* handle registers in funct line */
         if(access_meth == AC_REG)
         {
-            ++publish_line;
-            SetToLine(line, ParserIsRegister(ed->fh->word) - 1, reg_bit[i]);
+            SetToLine(line, ParserIsRegister(ed->fh->word), reg_bit[i]);
         }
         else if(access_meth == AC_INDEX)
         {
-            ++publish_line;
             /* extract register from index */
             SetToLine(line, ParserIndexNum(ed->fh->word), reg_bit[i]);
         }
 
     }
     
-    /*if(publish_line)*/
+    if(g_func_names[func_index].num_params) /* do not write funct line for fuctions without parameters */
         EncodeLineToObjectFile(ed->obj, *line, &ed->address);
 }
 
@@ -311,6 +314,7 @@ int EncodeVariables(SEncoderData *ed, int *line, int func_index)
 
     for(i = 0; i < g_func_names[func_index].num_params; ++i)
     {
+        ClearLine(line);
         ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
         ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
         ParserCleanSeparator(ed->fh->word);
@@ -319,7 +323,8 @@ int EncodeVariables(SEncoderData *ed, int *line, int func_index)
         switch(access_meth)
         {
             case AC_IMMEDIATE:
-            /* TODO: handle #num types */
+                SetNum(line, (int)strtol(ed->fh->word + 1, NULL, DEC_BASE));
+                EncodeLineToObjectFile(ed->obj, *line, &ed->address);
                 break;
             case AC_INDEX:
                 ParserExtractIndexFromWord(ed->fh->word, index_dummy_word);

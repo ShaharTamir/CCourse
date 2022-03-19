@@ -20,6 +20,8 @@ typedef struct
     int data_count;
     int instruct_count;
     int status;
+    int open_ent;
+    int open_ext;
     SLinkedList *sym_table;
     SLabel *lbl;
     SFileHandlerData *fh;
@@ -66,7 +68,8 @@ void RunAssembler(FILE *in, char *file_name)
         if(status)
         {
             fseek(in, 0, SEEK_SET); /* reset file to begin */
-            if(InitEncoderData(data.fh, data.sym_table, &en_data, file_name))
+            if(InitEncoderData(data.fh, data.sym_table, &en_data, file_name, 
+                data.open_ent, data.open_ext))
             {
                 en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
 
@@ -76,9 +79,8 @@ void RunAssembler(FILE *in, char *file_name)
                     en_data.fh->index = 0;
                     if(!EncodeLine(&en_data))
                     {
-                        ERR_AT("fuck everythings over", en_data.fh->line_count);
-                        /*fcloseall();
-                        FileHandlerRemoveAll(file_name);*/
+                        fcloseall();
+                        FileHandlerRemoveAll(file_name);
                         break;
                     }
                     en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
@@ -86,11 +88,6 @@ void RunAssembler(FILE *in, char *file_name)
             }
 
             DestroyEncoderData(&en_data);
-            /*printf("num code blocks: %d \
-                  \nnum data blocks: %d - success!!!\n", data.instruct_count, data.data_count);
-            printf("expected: \
-                \n3 = 4\n4 = 7\n5 = 11\n6 = 13\n7 = 17\n8 = 19 \
-                \n9 = 23\n10 = 28\n11 = 32\n12 = 36\n13 = 40\n14 = 41\n");*/
         }
     }
 
@@ -111,6 +108,8 @@ int InitAssemblerData(SAssemblerData *data)
         {
             ret_val = TRUE;
             data->status = TRUE;
+            data->open_ext = FALSE;
+            data->open_ent = FALSE;
             data->data_count = 0;
             data->instruct_count = 0;
             data->lbl = NULL;
@@ -187,6 +186,7 @@ int CheckNewLabel(SAssemblerData *data)
     }
     else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word)))
     {
+        (instruct == INST_ENTRY) ? (data->open_ent = TRUE) : (data->open_ext = TRUE);
         HandleNewInstructDef(data, instruct);
     }
     else if(data->fh->bytes_read != EOF)
@@ -315,7 +315,6 @@ void HandleCode(SAssemblerData *data)
             ERR_AT("invalid function parameters", data->fh->line_count);
             data->status = FALSE;
         }
-        /* DELETE printf("line: %d, instruct_count: %d\n", data->fh->line_count, data->instruct_count); */
     }
     else
     {
@@ -323,6 +322,4 @@ void HandleCode(SAssemblerData *data)
         data->status = FALSE;
     }
 }
-
-
 
