@@ -51,6 +51,9 @@ int LabelGetOffset(SLabel *lbl);
 /* check that label is define as ONLY .entry */
 int LabelIsEntry(SLabel *lbl);
 
+/* check if label is also defined as .entry */
+int LabelIsAlsoEntry(SLabel *lbl);
+
 /* check that label is define as ONLY .extern */
 int LabelIsExtern(SLabel *lbl);
 

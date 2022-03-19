@@ -16,12 +16,6 @@ typedef struct
     SLinkedList *sym_tbl;
 } SEncoderData;
 
-void EncodeLabelToExtFile(FILE *out, char *lbl, int address);
-
-void EncodeLblToEntryFile(FILE *out, SLabel *lbl);
-
-void EncodeLineToObjectFile(FILE *out, int line, int address);
-
 int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *en_data, const char *file_name);
 
 void DestroyEncoderData(SEncoderData *en_data);

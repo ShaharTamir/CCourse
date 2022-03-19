@@ -7,6 +7,7 @@
 #include "file_handler.h"
 #include "linked_list.h"
 #include "parser.h"
+#include "function.h"
 #include "encoder.h"
 
 #define START_ADD 100
@@ -40,6 +41,15 @@ static void ClearLine(int *line);
 
 void EncodeString(SEncoderData *ed);
 void EncodeData(SEncoderData *ed);
+int EncodeFunction(SEncoderData *ed);
+void EncodeFunctLine(SEncoderData *ed, int *line, int func_index);
+int EncodeVariables(SEncoderData *ed, int *line, int func_index);
+void EncodeLbl(SEncoderData *ed, SLabel *lbl);
+
+/* ToFiles encoder functions */
+void EncodeLblToEntryFile(FILE *out, SLabel *lbl);
+void EncodeLblToExtFile(FILE *out, char *lbl_name, int address);
+void EncodeLineToObjectFile(FILE *out, int line, int *address);
 
 void EncodeLblToExtFile(FILE *out, char *lbl_name, int address)
 {
@@ -52,47 +62,52 @@ void EncodeLblToExtFile(FILE *out, char *lbl_name, int address)
 
 void EncodeLblToEntryFile(FILE *out, SLabel *lbl)
 {
-    fprintf(out, "%s,%d,%d\n", LabelGetName(lbl), LabelGetBaseAddress(lbl), LabelGetOffset(lbl));
+    if(LabelIsAlsoEntry(lbl))
+        fprintf(out, "%s,%d,%d\n", LabelGetName(lbl), LabelGetBaseAddress(lbl), LabelGetOffset(lbl));
 }
 
-void EncodeLineToObjectFile(FILE *out, int line, int address)
+void EncodeLineToObjectFile(FILE *out, int line, int *address)
 {
     char nibble_part[] = {'E','D','C','B','A'};
     int i = 0;
 
-    if(address < FOUR_DIG)
-        fprintf(out, "0%d\t", address);
+    if(*address < FOUR_DIG)
+        fprintf(out, "0%d\t", *address);
     else
-        fprintf(out, "%d\t", address);
+        fprintf(out, "%d\t", *address);
 
     for(i = NIBBLE_SIZE; i > 0; --i)
     {
-        fprintf(out, "%c%X-", nibble_part[i], ExtractNibble(line, i));
+        fprintf(out, "%c%x-", nibble_part[i], ExtractNibble(line, i));
     }
 
-    fprintf(out, "%c%X\n", nibble_part[i], ExtractNibble(line, i));
+    fprintf(out, "%c%x\n", nibble_part[i], ExtractNibble(line, i));
+
+    ++*address;
 }
-/*
-void EncodeLblToObj(FILE *out, SLabel *lbl, int address)
+
+void EncodeLbl(SEncoderData *ed, SLabel *lbl)
 {
     int line = 0;
 
     if(LabelIsExtern(lbl))
     {
+        EncodeLblToExtFile(ed->ext, LabelGetName(lbl), ed->address);
+
         SetToLine(&line, CODE_EXTERNAL, INST_START_BIT);
-        EncodeLineToObjectFile(out, line, address);
-        EncodeLineToObjectFile(out, line, address + 1);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address);
     }
     else
     {
+        /* To Object file */
         SetToLine(&line, CODE_RELOCATABLE, INST_START_BIT);
         line += LabelGetBaseAddress(lbl);
-        EncodeLineToObjectFile(out, line, address);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address); /* base */
         line = line - LabelGetBaseAddress(lbl) + LabelGetOffset(lbl);
-        EncodeLineToObjectFile(out, line, address + 1);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address); /* offset */
     }
 }
-*/
 
 int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *en_data, const char *file_name)
 {
@@ -118,6 +133,7 @@ int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *
             {
                 en_data->address = START_ADD;
                 en_data->fh = fh;
+                en_data->fh->line_count = 0;
                 en_data->sym_tbl = sym_table;
 
                 return TRUE;
@@ -156,6 +172,7 @@ int EncodeLine(SEncoderData *ed)
     {
         if(ParserIsNewLabel(ed->fh->word)) /* no encode in obj file for label def */
         {
+            EncodeLblToEntryFile(ed->ent, LinkListFind(ed->sym_tbl, ed->fh->word, NULL)->data);
             ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
         }
 
@@ -170,7 +187,7 @@ int EncodeLine(SEncoderData *ed)
         }
         else /* code */
         {
-            /*return EncodeFunction(ed);*/
+            return EncodeFunction(ed);
         }
     }
 
@@ -191,9 +208,8 @@ void EncodeString(SEncoderData *ed)
     for(i = 1; i <= len; ++i)
     {
         line += (int)(ed->fh->word[i]); /* char is also int */
-        EncodeLineToObjectFile(ed->obj, line, ed->address);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address);
         line -= (int)(ed->fh->word[i]); /* reset line for next char */
-        ++ed->address;
     }
 }
 
@@ -216,9 +232,8 @@ void EncodeData(SEncoderData *ed)
             WARNING_AT("number out of size range, behaviour undefined", ed->fh->line_count);
 
         SetNum(&line, num);
-        EncodeLineToObjectFile(ed->obj, line, ed->address);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address);
         ClearLine(&line);
-        ++ed->address;
 
         ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
         ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
@@ -228,26 +243,97 @@ void EncodeData(SEncoderData *ed)
 int EncodeFunction(SEncoderData *ed)
 {
     int func_index = 0;
-    int num_param = 0;
     int line = 0;
+    int params_start_index = 0;
 
     SetToLine(&line, CODE_ABSOLUTE, INST_START_BIT);
     
     /* handle opcode line */
-    func_index = ParserIsFunction(ed->fh->word);
+    func_index = ParserIsFunction(ed->fh->word) - 1;
     SetToLine(&line, 1, g_func_names[func_index].opcode);
-    EncodeLineToObjectFile(ed->obj, line, ed->address);
-    ++ed->address;
+    EncodeLineToObjectFile(ed->obj, line, &ed->address);
+    params_start_index = ed->fh->index; /* save start of parameters before logic */
     
     /* handle line 2 funct */
-    ClearLine(&line);
-    SetToLine(&line, g_func_names[func_index].funct, FUNCT_START_BIT);
-    
-    /* handle variables */
-    if(g_func_names[func_index].num_params)
+    EncodeFunctLine(ed, &line, func_index);
+
+    /* handle each param encoding (mem addresses and immidiate vars)*/
+    ed->fh->index = params_start_index;
+    return EncodeVariables(ed, &line, func_index);
+}
+
+void EncodeFunctLine(SEncoderData *ed, int *line, int func_index)
+{
+    int reg_bit[] = {DEST_REG_START_BIT, SRC_REG_START_BIT};
+    int acc_bit[] = {DEST_ADDRESS_MODE_START_BIT, SRC_ADDRESS_MODE_START_BIT};
+    int access_meth = 0;
+    int i = 0;
+    int publish_line = FALSE;
+
+    ClearLine(line);
+    SetToLine(line, g_func_names[func_index].funct, FUNCT_START_BIT);
+    publish_line = g_func_names[func_index].funct;
+
+    for(i = 0; i < g_func_names[func_index].num_params; ++i)
     {
+        ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
+        ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
+        ParserCleanSeparator(ed->fh->word);
+        access_meth = FunctionGetAccessingMethod(ed->fh->word);
+        SetToLine(line, access_meth - 1, acc_bit[i]); /* set funct line accessing methods */
+
+        /* handle registers in funct line */
+        if(access_meth == AC_REG)
+        {
+            ++publish_line;
+            SetToLine(line, ParserIsRegister(ed->fh->word) - 1, reg_bit[i]);
+        }
+        else if(access_meth == AC_INDEX)
+        {
+            ++publish_line;
+            /* extract register from index */
+            SetToLine(line, ParserIndexNum(ed->fh->word), reg_bit[i]);
+        }
 
     }
+    
+    /*if(publish_line)*/
+        EncodeLineToObjectFile(ed->obj, *line, &ed->address);
+}
+
+int EncodeVariables(SEncoderData *ed, int *line, int func_index)
+{
+    char index_dummy_word[INDEX_LENGTH + 1] = {0};
+    SNode *label_node = NULL;
+    int access_meth = 0;
+    int i = 0;
+    int ret_val = TRUE;
+
+    for(i = 0; i < g_func_names[func_index].num_params; ++i)
+    {
+        ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
+        ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
+        ParserCleanSeparator(ed->fh->word);
+        access_meth = FunctionGetAccessingMethod(ed->fh->word);
+
+        switch(access_meth)
+        {
+            case AC_IMMEDIATE:
+            /* TODO: handle #num types */
+                break;
+            case AC_INDEX:
+                ParserExtractIndexFromWord(ed->fh->word, index_dummy_word);
+            case AC_DIRECT:
+                ret_val &= (NULL != (label_node = LinkListFind(ed->sym_tbl, ed->fh->word, NULL)));
+                if(label_node)
+                {
+                    EncodeLbl(ed, label_node->data);
+                }
+                break;
+        }
+    }
+
+    return ret_val;
 }
 
 int ExtractNibble(int line, int nibble_num)

@@ -43,7 +43,7 @@ void FileHandlerRemoveAll(const char *file_name)
 
     for(; i < NUM_PROG_STAGES; ++i)
     {
-        new_file_name = FileHandlerGetFileName(file_name, STAGE_OBJ);
+        new_file_name = FileHandlerGetFileName(file_name, i);
         remove(new_file_name);
         free(new_file_name);
     }

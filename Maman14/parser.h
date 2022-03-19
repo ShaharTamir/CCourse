@@ -49,6 +49,9 @@ int ParserSkipSeparator(char *line, int curr_index, int line_len);
 /* cleans separator (if exist) from end of word */
 void ParserCleanSeparator(char *word);
 
+/* returns index number (use only on verified extracted indexes - [r1#] words) */
+int ParserIndexNum(char *word);
+
 /* split word into name and index words index word is saved into index_container.
    If name or index is longer then valid - the function return false.
    It is user responsibility to provide a valid index_container.

@@ -17,6 +17,9 @@
 #define SEPARATOR ','
 #define OPEN_INDEX '['
 #define CLOSE_INDEX ']'
+#define ASCII_NUM_TO_INT 48
+#define BASE_DEC 10
+#define INDEX_DIG_OFFSET 2
 
 extern const SFunctions g_func_names[NUM_FUNCTIONS];
 extern const char *g_registers[NUM_REGISTERS];
@@ -183,6 +186,11 @@ void ParserCleanSeparator(char *word)
 
     len = strlen(word);
     word[len - 1] = word[len - 1] == SEPARATOR ? DELIMITER : word[len - 1];
+}
+
+int ParserIndexNum(char *word)
+{
+    return BASE_DEC + (word[strlen(word) - INDEX_DIG_OFFSET] - ASCII_NUM_TO_INT);
 }
 
 int ParserExtractIndexFromWord(char *word, char *index_container)

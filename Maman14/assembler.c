@@ -76,8 +76,9 @@ void RunAssembler(FILE *in, char *file_name)
                     en_data.fh->index = 0;
                     if(!EncodeLine(&en_data))
                     {
-                        fcloseall();
-                        FileHandlerRemoveAll(file_name);
+                        ERR_AT("fuck everythings over", en_data.fh->line_count);
+                        /*fcloseall();
+                        FileHandlerRemoveAll(file_name);*/
                         break;
                     }
                     en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);

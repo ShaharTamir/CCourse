@@ -154,6 +154,11 @@ int LabelIsEntry(SLabel *lbl)
     return lbl->type == (1 << LBL_ENTRY);
 }
 
+int LabelIsAlsoEntry(SLabel *lbl)
+{
+    return lbl->type & (1 << LBL_ENTRY);
+}
+
 int LabelIsExtern(SLabel *lbl)
 {
     return lbl->type == (1 << LBL_EXTERN);
