@@ -3,7 +3,7 @@ LIB_FOLDER = ../Utills/
 FILES = basic_defs.c label.c file_handler.c macro.c pre_processor.c parser.c  function.c encoder.c assembler.c main.c
 OBJECTS = basic_defs.o label.o file_handler.o macro.o pre_processor.o parser.o function.o encoder.o assembler.o main.o
 GCC_FLAGS = -ansi -Wall -pedantic-errors -g
-PRODUCT = parser
+PRODUCT = assembler
 
 $(PRODUCT): objects $(OBJECTS)
 	gcc $(GCC_FLAGS) $(OBJECTS) -L$(LIB_FOLDER) $(LIB_FOLDER)$(LIB) -o $(PRODUCT)
@@ -26,3 +26,6 @@ clean:
 	rm -r -f objects
 	rm -f *.o
 	rm -f *.am
+	rm -f *.obj
+	rm -f *.ent
+	rm -f *.ext

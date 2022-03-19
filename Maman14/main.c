@@ -12,11 +12,13 @@ int main(int argc, char *argv[])
     FILE* input = NULL;
     char* file_name = NULL;
     int status = FALSE;
+    int i = 0;
 
     InitGlobals();
-    if(argc > 1)
+    
+    for(i = 1; i < argc; ++i)
     {
-        file_name = FileHandlerGetFileName(argv[1], STAGE_FIRST);
+        file_name = FileHandlerGetFileName(argv[i], STAGE_FIRST);
         input = FileHandlerOpenFile(file_name, "r");
         
         free(file_name);
@@ -24,12 +26,12 @@ int main(int argc, char *argv[])
 
         if(input)
         {
-            status = RunPreProcessor(input, argv[1]);
+            status = RunPreProcessor(input, argv[i]);
             fclose(input);
 
             if(status)
             {
-                file_name = FileHandlerGetFileName(argv[1], STAGE_PRE_PROC);
+                file_name = FileHandlerGetFileName(argv[i], STAGE_PRE_PROC);
                 input = FileHandlerOpenFile(file_name, "r");
                 
                 free(file_name);
@@ -37,20 +39,20 @@ int main(int argc, char *argv[])
 
                 if(input)
                 {
-                    RunAssembler(input, argv[1]);
+                    RunAssembler(input, argv[i]);
                     fclose(input);
-
                 }
-                else {}
-                /* could not open the processed file (reach here is very bad..) */
+                else 
+                {
+                    printf("could not open the processed file. SW is s!@#\n");
+                }
             }
-            else {}
-            /* PreProcessor failed for some reason. */
+            else 
+            {
+                printf("%sPre-processor failed for some reason in file %s%s%s", CLR_RED, CLR_YEL, argv[i], CLR_RED);
+                printf(" - no support%s\n", CLR_RESET);
+            }
         }
-        else 
-        {
-        }
-        /* could not open input file */
     }
 
     return 0;

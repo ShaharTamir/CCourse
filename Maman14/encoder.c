@@ -114,6 +114,10 @@ int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *
 {
     char *new_file_name = NULL;
 
+    en_data->obj = NULL;
+    en_data->ent = NULL;
+    en_data->ext = NULL;
+
     new_file_name = FileHandlerGetFileName(file_name, STAGE_OBJ);
     en_data->obj = FileHandlerOpenFile(new_file_name, "w");
     free(new_file_name);
@@ -329,7 +333,7 @@ int EncodeVariables(SEncoderData *ed, int *line, int func_index)
             case AC_INDEX:
                 ParserExtractIndexFromWord(ed->fh->word, index_dummy_word);
             case AC_DIRECT:
-                ret_val &= (NULL != (label_node = LinkListFind(ed->sym_tbl, ed->fh->word, NULL)));
+                ret_val = (NULL != (label_node = LinkListFind(ed->sym_tbl, ed->fh->word, NULL)));
                 if(label_node)
                 {
                     EncodeLbl(ed, label_node->data);
@@ -337,6 +341,9 @@ int EncodeVariables(SEncoderData *ed, int *line, int func_index)
                 break;
         }
     }
+
+    if(!ret_val)
+        ERR_AT("label is used but not defined!", ed->fh->line_count);
 
     return ret_val;
 }

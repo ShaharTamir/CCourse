@@ -58,6 +58,9 @@ int RunPreProcessor(FILE *in, char *file_name)
     
     DestroyPreProc(&data);
 
+    if(is_macro)
+        data.status = FALSE;
+
     return data.status;
 }
 
