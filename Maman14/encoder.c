@@ -13,8 +13,6 @@
 #define START_ADD 100
 #define FOUR_DIG 1000
 #define DEC_BASE 10
-#define NUM_PARAMS 2
-#define NUM_NIBBLES 5
 #define NIBBLE_SIZE 4
 #define INST_START_BIT 16
 #define FUNCT_START_BIT 12
