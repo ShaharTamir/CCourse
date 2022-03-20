@@ -171,6 +171,8 @@ int GetIsValidAccessingMethod(char *word)
         {
             if(ParserValidateName(word) && ParserValidateIndex(index_word))
                 return AC_INDEX;
+            else
+                ERR("invalid index");
         }
     }
     else if(ParserValidateName(word))

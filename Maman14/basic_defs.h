@@ -13,9 +13,9 @@
 
 #include "colors.h"
 
-#define ERR(string) printf("%serror: %s%s\n", CLR_RED, string, CLR_RESET)
-#define ERR_AT(string, line) printf("%serror: %s at: %s%d%s\n", CLR_RED, string, CLR_YEL, line, CLR_RESET)
-#define WARNING_AT(string, line) printf("%swarning: %s at: %s%d%s\n", CLR_YEL, string, CLR_RED, line, CLR_RESET)
+#define ERR(string) printf("%serror:%s %s -->\n", CLR_RED, CLR_RESET, string)
+#define ERR_AT(string, line) printf("%serror:%s %s at: %s%d%s\n", CLR_RED, CLR_RESET, string, CLR_YEL, line, CLR_RESET)
+#define WARNING_AT(string, line) printf("%swarning:%s %s at: %s%d%s\n", CLR_YEL, CLR_RESET, string, CLR_RED, line, CLR_RESET)
 
 typedef struct 
 {

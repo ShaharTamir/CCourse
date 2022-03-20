@@ -230,15 +230,23 @@ void HandleNewLabelDef(SAssemblerData *data)
     SNode *iter = NULL;
 
     /* validate name and verify not exist in sym_table */
-    if(ParserValidateName(data->fh->word) && NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
+    if(ParserValidateName(data->fh->word))
     {
-        data->lbl = AddLabelToSymTable(data);
-        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
-    }
-    else if(iter && LabelIsEntry(iter->data)) /* label is defined only as entry but memory not yet defined */
-    {
-        data->lbl = iter->data;
-        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
+        if(NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
+        {
+            data->lbl = AddLabelToSymTable(data);
+            LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
+        }
+        else if(iter && LabelIsEntry(iter->data)) /* label is defined only as entry but memory not yet defined */
+        {
+            data->lbl = iter->data;
+            LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
+        }
+        else
+        {
+            ERR_AT("label is defined twice", data->fh->line_count);
+            data->status = FALSE;
+        }
     }
     else
     {
