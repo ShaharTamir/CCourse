@@ -35,14 +35,12 @@ typedef enum
     CODE_EXTERNAL = 1       /* 0001 */
 } EInstType;
 
-static int ExtractNibble(int line, int nibble_num);
-static void SetToLine(int *line, int var, int offset);
-static void SetNum(int *line, int num);
-static void ClearLine(int *line);
-
+/* main logic functions */
 void EncodeString(SEncoderData *ed);
 void EncodeData(SEncoderData *ed);
 int EncodeFunction(SEncoderData *ed);
+
+/* EncodeFunction functions */
 void EncodeFunctLine(SEncoderData *ed, int *line, int func_index);
 int EncodeVariables(SEncoderData *ed, int *line, int func_index);
 void EncodeLbl(SEncoderData *ed, SLabel *lbl);
@@ -52,62 +50,13 @@ void EncodeLblToEntryFile(FILE *out, SLabel *lbl);
 void EncodeLblToExtFile(FILE *out, char *lbl_name, int address);
 void EncodeLineToObjectFile(FILE *out, int line, int *address);
 
-void EncodeLblToExtFile(FILE *out, char *lbl_name, int address)
-{
-    char base[] = {" BASE "};
-    char offset[] = {" OFFSET "};
+/* bit manipulation functions */
+static int ExtractNibble(int line, int nibble_num);
+static void SetToLine(int *line, int var, int offset);
+static void SetNum(int *line, int num);
+static void ClearLine(int *line);
 
-    fprintf(out, "%s%s%d\n", lbl_name, base, address);
-    fprintf(out, "%s%s%d\n\n", lbl_name, offset, address + 1);
-}
-
-void EncodeLblToEntryFile(FILE *out, SLabel *lbl)
-{
-    if(LabelIsAlsoEntry(lbl))
-        fprintf(out, "%s,%d,%d\n", LabelGetName(lbl), LabelGetBaseAddress(lbl), LabelGetOffset(lbl));
-}
-
-void EncodeLineToObjectFile(FILE *out, int line, int *address)
-{
-    char nibble_part[] = {'E','D','C','B','A'};
-    int i = 0;
-
-    if(*address < FOUR_DIG)
-        fprintf(out, "0%d ", *address);
-    else
-        fprintf(out, "%d ", *address);
-
-    for(i = NIBBLE_SIZE; i > 0; --i)
-    {
-        fprintf(out, "%c%x-", nibble_part[i], ExtractNibble(line, i));
-    }
-
-    fprintf(out, "%c%x\n", nibble_part[i], ExtractNibble(line, i));
-    ++*address;
-}
-
-void EncodeLbl(SEncoderData *ed, SLabel *lbl)
-{
-    int line = 0;
-
-    if(LabelIsExtern(lbl))
-    {
-        EncodeLblToExtFile(ed->ext, LabelGetName(lbl), ed->address);
-
-        SetToLine(&line, CODE_EXTERNAL, INST_START_BIT);
-        EncodeLineToObjectFile(ed->obj, line, &ed->address);
-        EncodeLineToObjectFile(ed->obj, line, &ed->address);
-    }
-    else
-    {
-        /* To Object file */
-        SetToLine(&line, CODE_RELOCATABLE, INST_START_BIT);
-        line += LabelGetBaseAddress(lbl);
-        EncodeLineToObjectFile(ed->obj, line, &ed->address); /* base */
-        line = line - LabelGetBaseAddress(lbl) + LabelGetOffset(lbl);
-        EncodeLineToObjectFile(ed->obj, line, &ed->address); /* offset */
-    }
-}
+/********* API FUNCTIONS *********/
 
 int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *en_data, \
                 const char *file_name, int open_ent, int open_ext)
@@ -211,6 +160,8 @@ int EncodeLine(SEncoderData *ed)
     return TRUE;
 }
 
+/************ SERVICE FUNCTIONS *****************/
+
 void EncodeString(SEncoderData *ed)
 {
     int i = 0;
@@ -281,6 +232,29 @@ int EncodeFunction(SEncoderData *ed)
     return EncodeVariables(ed, &line, func_index);
 }
 
+void EncodeLbl(SEncoderData *ed, SLabel *lbl)
+{
+    int line = 0;
+
+    if(LabelIsExtern(lbl))
+    {
+        EncodeLblToExtFile(ed->ext, LabelGetName(lbl), ed->address);
+
+        SetToLine(&line, CODE_EXTERNAL, INST_START_BIT);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address);
+    }
+    else
+    {
+        /* To Object file */
+        SetToLine(&line, CODE_RELOCATABLE, INST_START_BIT);
+        line += LabelGetBaseAddress(lbl);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address); /* base */
+        line = line - LabelGetBaseAddress(lbl) + LabelGetOffset(lbl);
+        EncodeLineToObjectFile(ed->obj, line, &ed->address); /* offset */
+    }
+}
+
 void EncodeFunctLine(SEncoderData *ed, int *line, int func_index)
 {
     int reg_bit[] = {DEST_REG_START_BIT, SRC_REG_START_BIT};
@@ -295,7 +269,6 @@ void EncodeFunctLine(SEncoderData *ed, int *line, int func_index)
     {
         ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
         ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
-        ParserCleanSeparator(ed->fh->word);
         access_meth = FunctionGetAccessingMethod(ed->fh->word);
         SetToLine(line, access_meth - 1, acc_bit[i]); /* set funct line accessing methods */
 
@@ -329,7 +302,6 @@ int EncodeVariables(SEncoderData *ed, int *line, int func_index)
         ClearLine(line);
         ed->fh->index = ParserSkipSeparator(ed->fh->line, ed->fh->index, ed->fh->bytes_read);
         ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
-        ParserCleanSeparator(ed->fh->word);
         access_meth = FunctionGetAccessingMethod(ed->fh->word);
 
         switch(access_meth)
@@ -354,6 +326,40 @@ int EncodeVariables(SEncoderData *ed, int *line, int func_index)
         ERR_AT("label is used but not defined!", ed->fh->line_count);
 
     return ret_val;
+}
+
+void EncodeLblToExtFile(FILE *out, char *lbl_name, int address)
+{
+    char base[] = {" BASE "};
+    char offset[] = {" OFFSET "};
+
+    fprintf(out, "%s%s%d\n", lbl_name, base, address);
+    fprintf(out, "%s%s%d\n\n", lbl_name, offset, address + 1);
+}
+
+void EncodeLblToEntryFile(FILE *out, SLabel *lbl)
+{
+    if(LabelIsAlsoEntry(lbl))
+        fprintf(out, "%s,%d,%d\n", LabelGetName(lbl), LabelGetBaseAddress(lbl), LabelGetOffset(lbl));
+}
+
+void EncodeLineToObjectFile(FILE *out, int line, int *address)
+{
+    char nibble_part[] = {'E','D','C','B','A'};
+    int i = 0;
+
+    if(*address < FOUR_DIG)
+        fprintf(out, "0%d ", *address);
+    else
+        fprintf(out, "%d ", *address);
+
+    for(i = NIBBLE_SIZE; i > 0; --i)
+    {
+        fprintf(out, "%c%x-", nibble_part[i], ExtractNibble(line, i));
+    }
+
+    fprintf(out, "%c%x\n", nibble_part[i], ExtractNibble(line, i));
+    ++*address;
 }
 
 int ExtractNibble(int line, int nibble_num)

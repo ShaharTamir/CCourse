@@ -44,17 +44,31 @@ static void DestroyAssemblerData(SAssemblerData *data);
         the standard output.
  */
 static int DefineSymbolTable(FILE *in, SAssemblerData *data);
-void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name);
+
+/* logic of writing to files using encoder.c API */
+static void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name);
 
 /* FIRST CYCLE FUNCTIONS */
+
+/* handle adding labels to sym_table and if should continue parse line */
 static int CheckNewLabel(SAssemblerData *data);
+
+/* handle new label defined with ':' */
 static void HandleNewLabelDef(SAssemblerData *data);
+
+/* handle new label defined with .entry or .extern */
 static void HandleNewInstructDef(SAssemblerData *data, int instruct);
-static SLabel *AddLabelToSymTable(SAssemblerData *data);
-static int AddLabelTypeCodeData(SAssemblerData *data, int instruction);
+
+/* handle and validate .string instruction */
 static void HandleString(SAssemblerData *data);
+
+/* handle and validate .data instruction */
 static void HandleData(SAssemblerData *data);
 static void HandleCode(SAssemblerData *data);
+
+/* SETTING LABEL SERVICE FUNCTIONS */
+static SLabel *AddLabelToSymTable(SAssemblerData *data);
+static int AddLabelTypeCodeData(SAssemblerData *data, int instruct);
 
 void RunAssembler(FILE *in, char *file_name)
 {
@@ -164,6 +178,7 @@ void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
     {
         EncodeObjHeadline(&en_data, data->data_count, data->instruct_count);
         
+        /* 2 cycles - first is for code instructions, 2nd is for data */
         for(en_data.is_data_encode = FALSE; en_data.is_data_encode <= TRUE; ++en_data.is_data_encode)
         {
             en_data.fh->line_count = 0;
@@ -198,7 +213,7 @@ int CheckNewLabel(SAssemblerData *data)
         continue_read_line = TRUE;
         HandleNewLabelDef(data);
     }
-    else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word)))
+    else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word))) /* word is .entry or .extern */
     {
         (instruct == INST_ENTRY) ? (data->open_ent = TRUE) : (data->open_ext = TRUE);
         HandleNewInstructDef(data, instruct);
@@ -260,33 +275,6 @@ void HandleNewInstructDef(SAssemblerData *data, int instruct)
     }
 }
 
-SLabel *AddLabelToSymTable(SAssemblerData *data)
-{
-    SNode *iter = NULL;
-
-    iter = NodeCreate(LabelCreate(data->fh->word), NULL);
-    LinkListAppend(data->sym_table, iter);
-    
-    return iter->data;
-}
-
-int AddLabelTypeCodeData(SAssemblerData *data, int instruction)
-{
-    int inst_type = FALSE;
-
-    inst_type = instruction ? LabelInstructToLblType(instruction) : LBL_CODE;
-
-    if(!LabelSetType(data->lbl, inst_type))
-    {
-        /* if FALSE- LabelSetType already print the error, need line num */
-        printf("%s at: %s%d%s\n", CLR_RED, CLR_YEL, data->fh->line_count, CLR_WHT);
-        data->status = FALSE;
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 void HandleString(SAssemblerData *data)
 {
     int string_len = 0;
@@ -337,3 +325,29 @@ void HandleCode(SAssemblerData *data)
     }
 }
 
+SLabel *AddLabelToSymTable(SAssemblerData *data)
+{
+    SNode *iter = NULL;
+
+    iter = NodeCreate(LabelCreate(data->fh->word), NULL);
+    LinkListAppend(data->sym_table, iter);
+    
+    return iter->data;
+}
+
+int AddLabelTypeCodeData(SAssemblerData *data, int instruction)
+{
+    int inst_type = FALSE;
+
+    inst_type = instruction ? LabelInstructToLblType(instruction) : LBL_CODE;
+
+    if(!LabelSetType(data->lbl, inst_type))
+    {
+        /* if FALSE- LabelSetType already print the error, need line num */
+        printf("%s at: %s%d%s\n", CLR_RED, CLR_YEL, data->fh->line_count, CLR_WHT);
+        data->status = FALSE;
+        return FALSE;
+    }
+
+    return TRUE;
+}
