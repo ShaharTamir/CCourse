@@ -28,13 +28,23 @@ typedef struct
 
 /* add to group the bit of acc_meth (group is bit field */
 static int AddAccessMethToGroup(int group, EAccessMeth acc_meth);
+
+/* calculate how many encoded lines are to add to total code instructions for each function */
 static int CalcCodeLines(SFunctionHandlerData *fhd, int func);
-static int ConvMethAccToBlks(int meth, int is_funct);
+
+/* convert access method to num of code instructions to encode */
+static int ConvMethAccToBlks(int meth);
+
+/* return access type if valid, else return FALSE */
 static int GetIsValidAccessingMethod(char *word);
 
+/* validate function with 1 parameter */
 static int ValidateOneVariable(SFunctionHandlerData *fhd, int groups);
+
+/* validate function with 2 parameters */
 static int ValidateTwoVariable(SFunctionHandlerData *fhd, int groups_a, int groups_b);
 
+/* functions that set bitfield according to groups using - Add AccessMethToGroup */
 static int ValidateGroupOne(SFunctionHandlerData *fhd);
 static int ValidateGroupTwo(SFunctionHandlerData *fhd);
 static int ValidateGroupThree(SFunctionHandlerData *fhd);
@@ -43,6 +53,7 @@ static int ValidateGroupFive(SFunctionHandlerData *fhd);
 static int ValidateGroupSix(SFunctionHandlerData *fhd);
 static int ValidateGroupSeven(SFunctionHandlerData *fhd);
 
+/************** API FUNCTIONS *************/
 int FunctionValidateFunc(SFileHandlerData *fh, int *num_instructions, int func)
 {
     SFunctionHandlerData fhd;
@@ -84,60 +95,6 @@ int FunctionValidateFunc(SFileHandlerData *fh, int *num_instructions, int func)
     return ret_val;
 }
 
-int AddAccessMethToGroup(int group, EAccessMeth acc_meth)
-{
-    group |= 1 << acc_meth;
-
-    return group;
-}
-
-int CalcCodeLines(SFunctionHandlerData *fhd, int func)
-{
-    int num_blks = 1; /* start with 1 for opcode line */
-
-    switch(func)
-    {
-        case MOV: case CMP: case LEA: /* 2 param no funct code */
-            num_blks += ConvMethAccToBlks(fhd->acc_meth_a, FALSE) + ConvMethAccToBlks(fhd->acc_meth_b, FALSE);
-            break;
-        case RED: case PRN: /* 1 param no funct code */
-            num_blks += ConvMethAccToBlks(fhd->acc_meth_b, FALSE);
-            break;
-        case ADD: case SUB: /* 2 param funct code */
-            ++num_blks;
-            num_blks += ConvMethAccToBlks(fhd->acc_meth_a, TRUE) + ConvMethAccToBlks(fhd->acc_meth_b, TRUE); 
-            break;
-        case CLR: case NOT: case INC: case DEC: case JMP: /* 1 param funct code */
-        case BNE: case JSR:
-            ++num_blks;
-            num_blks += ConvMethAccToBlks(fhd->acc_meth_b, TRUE);
-            break;
-    }
-
-    return num_blks;
-}
-
-int ConvMethAccToBlks(int meth, int is_funct)
-{
-    int sum = 0;
-
-    switch(meth)
-    {
-        case AC_IMMEDIATE:
-        case AC_DIRECT:
-            sum += 2;
-            break;
-        case AC_INDEX:
-            sum += 3 - is_funct;
-            break;
-        case AC_REG:
-            sum += 1 - is_funct;
-            break;
-    }
-
-    return sum;
-}
-
 EAccessMeth FunctionGetAccessingMethod(char *word)
 {
     if(ParserIsNumber(word))
@@ -147,6 +104,57 @@ EAccessMeth FunctionGetAccessingMethod(char *word)
     if(ParserIsIndex(word))
         return AC_INDEX;
     return AC_DIRECT;
+}
+
+/************** SERVICE FUNCTIONS *************/
+
+int AddAccessMethToGroup(int group, EAccessMeth acc_meth)
+{
+    group |= 1 << acc_meth;
+
+    return group;
+}
+
+int CalcCodeLines(SFunctionHandlerData *fhd, int func)
+{
+    int num_blks = 1; /* start with 1 for opcode line and 1 for funct */
+
+    switch(func)
+    {
+        case MOV: case CMP: case LEA: /* 2 param functions */ 
+        case ADD: case SUB: 
+            ++num_blks; /* funct line */
+            num_blks += ConvMethAccToBlks(fhd->acc_meth_a) + ConvMethAccToBlks(fhd->acc_meth_b);
+            break;
+        case CLR: case NOT: case INC: /* 1 param functions */
+        case DEC: case JMP: case RED: 
+        case PRN: case BNE: case JSR:
+            ++num_blks; /* funct line */
+            num_blks += ConvMethAccToBlks(fhd->acc_meth_b);
+            break;
+    }
+
+    return num_blks;
+}
+
+int ConvMethAccToBlks(int meth)
+{
+    int sum = 0;
+
+    switch(meth)
+    {
+        case AC_IMMEDIATE: /* value */
+            sum += 1;
+            break;
+        case AC_DIRECT: /* base + offset */
+        case AC_INDEX:
+            sum += 2;
+            break;
+        case AC_REG: /* encoded in funct line */
+            break;
+    }
+
+    return sum;
 }
 
 int GetIsValidAccessingMethod(char *word)
