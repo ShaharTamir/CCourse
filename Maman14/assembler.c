@@ -159,25 +159,29 @@ void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
 {
     SEncoderData en_data;
 
-
-    fseek(in, 0, SEEK_SET); /* reset file to begin */
     if(InitEncoderData(data->fh, data->sym_table, &en_data, file_name, 
         data->open_ent, data->open_ext))
     {
         EncodeObjHeadline(&en_data, data->data_count, data->instruct_count);
-        en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
-
-        while(en_data.fh->bytes_read != EOF)
+        
+        for(en_data.is_data_encode = FALSE; en_data.is_data_encode <= TRUE; ++en_data.is_data_encode)
         {
-            ++en_data.fh->line_count;
-            en_data.fh->index = 0;
-            if(!EncodeLine(&en_data))
-            {
-                DestroyEncoderData(&en_data);
-                FileHandlerRemoveAll(file_name);
-                break;
-            }
+            en_data.fh->line_count = 0;
+            fseek(in, 0, SEEK_SET); /* reset file to begin */
             en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
+
+            while(en_data.fh->bytes_read != EOF)
+            {
+                ++en_data.fh->line_count;
+                en_data.fh->index = 0;
+                if(!EncodeLine(&en_data))
+                {
+                    DestroyEncoderData(&en_data);
+                    FileHandlerRemoveAll(file_name);
+                    break;
+                }
+                en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
+            }
         }
     }
 

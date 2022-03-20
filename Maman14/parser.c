@@ -234,8 +234,8 @@ int ParserNextWord(char *line, char *word, int curr_index, int line_len)
 
     curr_index = SkipSpaces(line, curr_index, line_len);
 
-    while(curr_index < line_len 
-        && !isspace(line[curr_index]))
+    while(curr_index < line_len && !isspace(line[curr_index]) 
+        && line[curr_index] != SEPARATOR)
     {
         word[i] = line[curr_index];
         ++i;

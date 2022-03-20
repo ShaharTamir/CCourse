@@ -8,6 +8,7 @@
 
 typedef struct
 {
+    int is_data_encode;
     int address;
     FILE *obj;
     FILE *ext;

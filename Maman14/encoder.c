@@ -145,10 +145,11 @@ int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, SEncoderData *
             return FALSE;
     }
 
-    en_data->address = START_ADD;
+    en_data->is_data_encode = FALSE;
     en_data->fh = fh;
-    en_data->fh->line_count = 0;
     en_data->sym_tbl = sym_table;
+    en_data->address = START_ADD;
+    en_data->fh->line_count = 0;
 
     return TRUE;
 }
@@ -186,20 +187,22 @@ int EncodeLine(SEncoderData *ed)
     {
         if(ParserIsNewLabel(ed->fh->word)) /* no encode in obj file for label def */
         {
-            EncodeLblToEntryFile(ed->ent, LinkListFind(ed->sym_tbl, ed->fh->word, NULL)->data);
+            if(ed->is_data_encode)
+                EncodeLblToEntryFile(ed->ent, LinkListFind(ed->sym_tbl, ed->fh->word, NULL)->data);
+
             ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
         }
 
         instruction = ParserIsDataString(ed->fh->word);
 
-        if(instruction)
+        if(instruction && ed->is_data_encode)
         {
             if(INST_STRING == instruction)
                 EncodeString(ed);
             else
                 EncodeData(ed);
         }
-        else /* code */
+        else if(!instruction && !ed->is_data_encode) /* code */
         {
             return EncodeFunction(ed);
         }
