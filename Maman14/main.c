@@ -15,6 +15,12 @@ int main(int argc, char *argv[])
     int status = FALSE;
     int i = 0;
 
+    if(argc <= 1)
+    {
+        printf("%sassembler: %sfatal error: %sno input files\n", CLR_BOLD, CLR_RED, CLR_RESET);
+        printf("compilation terminated\n");
+    }
+
     InitGlobals();
     
     for(i = 1; i < argc; ++i)
