@@ -77,10 +77,11 @@ void RunAssembler(FILE *in, char *file_name)
     if(InitAssemblerData(&data))
     {
         status = DefineSymbolTable(in, &data);
+        EncodeOutput(in, &data, file_name);
 
-        if(status)
+        if(!status || !data.status)
         {
-            EncodeOutput(in, &data, file_name);
+            printf("%sin file: %s.am%s\n", CLR_BOLD, file_name, CLR_RESET);
         }
     }
 
@@ -189,8 +190,7 @@ void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
                 en_data.fh->index = 0;
                 if(!EncodeLine(&en_data)) /* FALSE means something went wrong */
                 {
-                    DestroyEncoderData(&en_data);
-                    FileHandlerRemoveAll(file_name);
+                    data->status = FALSE;
                     break;
                 }
                 en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
@@ -199,6 +199,8 @@ void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
     }
 
     DestroyEncoderData(&en_data);
+    if(!data->status)
+        FileHandlerRemoveAll(file_name);
 }
 
 int CheckNewLabel(SAssemblerData *data)
@@ -244,6 +246,7 @@ void HandleNewLabelDef(SAssemblerData *data)
         }
         else
         {
+            data->lbl = iter->data;
             ERR_AT("label is defined twice", data->fh->line_count);
             data->status = FALSE;
         }
@@ -352,7 +355,7 @@ int AddLabelTypeCodeData(SAssemblerData *data, int instruction)
     if(!LabelSetType(data->lbl, inst_type))
     {
         /* if FALSE- LabelSetType already print the error, need line num */
-        printf("%s at: %s%d%s\n", CLR_RED, CLR_YEL, data->fh->line_count, CLR_WHT);
+        printf("\tat: %s%d%s\n", CLR_YEL, data->fh->line_count, CLR_RESET);
         data->status = FALSE;
         return FALSE;
     }
