@@ -8,8 +8,11 @@ typedef struct
     char *name;
 } SMacroType;
 
+/* allocate and initialize a new macro. if not allocated properly - return NULL 
+   max_name_len is not checked! your responsibility! */
 SMacroType *MacroCreate(int max_name_len);
 
+/* properly release macro memory allocation */
 void MacroDestroy(SMacroType *macro);
 
 /* This function is an ActionFunc for LinkListForEach 

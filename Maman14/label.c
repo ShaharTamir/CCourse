@@ -4,7 +4,6 @@
 #include "parser.h"
 #include "label.h"
 
-#define MEM_ADD_OFFSET 100
 #define MEM_MOD 16
 
 struct _SLabel

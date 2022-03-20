@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
 
     InitGlobals();
     
-    for(i = 1; i < argc; ++i)
+    for(i = 1; i < argc; ++i) /* run assembler on each file by order */
     {
-        file_name = FileHandlerGetFileName(argv[i], STAGE_FIRST);
+        file_name = FileHandlerGetFileName(argv[i], STAGE_FIRST); /* get .as file name */
         input = FileHandlerOpenFile(file_name, "r");
         
         free(file_name);
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
             if(status)
             {
-                file_name = FileHandlerGetFileName(argv[i], STAGE_PRE_PROC);
+                file_name = FileHandlerGetFileName(argv[i], STAGE_PRE_PROC); /* get .am file name */
                 input = FileHandlerOpenFile(file_name, "r");
                 
                 free(file_name);

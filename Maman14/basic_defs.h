@@ -9,6 +9,7 @@
 #define NUM_REGISTERS 16
 #define TRUE 1
 #define FALSE 0
+#define MEM_ADD_OFFSET 100
 
 #include "colors.h"
 

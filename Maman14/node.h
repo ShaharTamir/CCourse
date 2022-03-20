@@ -7,8 +7,10 @@ typedef struct SNode
     struct SNode *next;
 } SNode;
 
+/* is node is not allocated properly - return NULL */
 SNode* NodeCreate(void *data, SNode *next);
 
+/* release allocated memory */
 void NodeDestroy(SNode *node);
 
 #endif /* __NODE_H__ */

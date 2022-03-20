@@ -23,14 +23,21 @@ typedef struct
     char *word;
 } SFileHandlerData;
 
+/* allocate file name with the right ".end" according to program stage 
+   if 'file_name' is not allocated properly - return NULL */
 char *FileHandlerGetFileName(const char *file_name, EProgStage stage);
 
+/* if file is not opened properly - return NULL */
 FILE *FileHandlerOpenFile(const char *file_name, const char *mode);
 
+/* delete all files generated at encoding stage - OBJ, EXT, ENT */
 void FileHandlerRemoveAll(const char *file_name);
 
+/* allocate a SFileHandlerData and initialize.
+   if not allocated properly - return NULL */
 SFileHandlerData *FileHandlerCreate(int line_len, int word_len);
 
+/* free all data and release memory properly */
 void FileHandlerDestroy(SFileHandlerData *fh);
 
 #endif /* __FILE_HNALDER_H__ */

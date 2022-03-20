@@ -12,6 +12,7 @@ typedef int (*ActionFunc)(void *node_data, void *params); /* return 1 if OK, 0 i
 /* create a new list containing 'node' as it's head */
 SLinkedList* LinkListCreate(SNode *node, CompareFunc cmp_func);
 
+/* release memory properly */
 void LinkListDestroy(SLinkedList *list);
 
 /* push a new node to the beginning of the list */

@@ -21,11 +21,23 @@ typedef struct
 
 static int InitPreProc(SPreProcData *data, char *file_name);
 static void DestroyPreProc(SPreProcData *data);
+
+/* search for new 'macro' start definitions in line. 
+   if found return TRUE and set the state of pre-proc into "in macro" */
 static int FindMacroLogic(FILE *in, SPreProcData *data);
+
+/* add new macro to list of macros. if macro is not added return FALSE */
 static int AddMacroToList(SPreProcData *data);
+
+/* switch macro name into the macro code definition */
 static void SpreadMacro(FILE *in, SPreProcData *data, SMacroType *macro);
+
+/* search if reached end of macro definition - set relevant data to macro defintion 
+   if found return FALSE to set the state of the pre-proc into "not in macro",
+   else return TRUE - means still in macro. */
 static int SetMacroEnd(FILE *in, SPreProcData *data);
 
+/* pre_proc_states are FALSE==not_in_macro or TRUE==in_macro function handlers are set in order */
 typedef int (*PreProcFunc)(FILE *in, SPreProcData *data);
 static const PreProcFunc pre_proc_states_func[] = {FindMacroLogic, SetMacroEnd};
 
@@ -42,9 +54,9 @@ int RunPreProcessor(FILE *in, char *file_name)
             data.fh->bytes_read = getline(&data.fh->line, &data.fh->line_len, in);
             data.ignore_line = is_macro || data.fh->bytes_read == EOF; /* to handle 'endm' */
             
-            if(!ParserIsLineNote(data.fh->line, data.fh->bytes_read))
+            if(!ParserIsLineNote(data.fh->line, data.fh->bytes_read)) /* ignore note or empty lines */
             {
-                for(data.fh->index = 0 ; data.fh->index < data.fh->bytes_read; ++data.fh->index)
+                for(data.fh->index = 0 ; data.fh->index < data.fh->bytes_read; ++data.fh->index) /* parse line untill finish */
                 {
                     data.fh->index = ParserNextWord(data.fh->line, data.fh->word, data.fh->index, data.fh->bytes_read);
                     is_macro = pre_proc_states_func[is_macro](in, &data); /* call logic function according to is_macro status */

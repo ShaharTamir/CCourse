@@ -187,7 +187,7 @@ void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
             {
                 ++en_data.fh->line_count;
                 en_data.fh->index = 0;
-                if(!EncodeLine(&en_data))
+                if(!EncodeLine(&en_data)) /* FALSE means something went wrong */
                 {
                     DestroyEncoderData(&en_data);
                     FileHandlerRemoveAll(file_name);
@@ -229,6 +229,7 @@ void HandleNewLabelDef(SAssemblerData *data)
 {
     SNode *iter = NULL;
 
+    /* validate name and verify not exist in sym_table */
     if(ParserValidateName(data->fh->word) && NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
     {
         data->lbl = AddLabelToSymTable(data);
@@ -253,10 +254,10 @@ void HandleNewInstructDef(SAssemblerData *data, int instruct)
     data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
     if(ParserValidateName(data->fh->word))
     {
-        if(NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
+        if(NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL))) /* check if exist in sym_table */
             data->lbl = AddLabelToSymTable(data);
         else
-            data->lbl = (SLabel*)iter->data;
+            data->lbl = (SLabel*)iter->data; /* means exist */
             
         if(AddLabelTypeCodeData(data, instruct))
         {
@@ -307,7 +308,7 @@ void HandleCode(SAssemblerData *data)
 {
     int func = FALSE;
 
-    func = ParserIsFunction(data->fh->word);
+    func = ParserIsFunction(data->fh->word); /* get func index or FALSE */
 
     if(func)
     {
