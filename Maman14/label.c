@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "label.h"
 
+#define MEM_ADD_OFFSET 100
 #define MEM_MOD 16
 
 struct _SLabel
@@ -29,7 +30,7 @@ SLabel *LabelCreate(char *name)
 
         if(name)
         {
-            new_lbl->name = (char *)malloc(strlen(name) + 1);
+            new_lbl->name = (char *)malloc(strlen(name) + 1); /* +1 for delimiter */
         
             if(new_lbl->name)
             {
@@ -77,6 +78,7 @@ void LabelSetMemAddress(SLabel *lbl, int mem_address)
     if(!lbl)
         return;
 
+    mem_address += MEM_ADD_OFFSET;
     lbl->offset = mem_address % MEM_MOD;
     lbl->base_address = mem_address - lbl->offset;
 }
@@ -92,7 +94,7 @@ void LabelSetName(SLabel *lbl, char *name)
         lbl->name = NULL;
     }
 
-    lbl->name = (char *)malloc(strlen(name) + 1);
+    lbl->name = (char *)malloc(strlen(name) + 1); /* +1 for delimiter */
         
     if(lbl->name)
     {

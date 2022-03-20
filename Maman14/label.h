@@ -18,6 +18,7 @@ SLabel *LabelCreate(char *name);
 /* Destroys label */
 void LabelDestroy(SLabel *lbl);
 
+/* Convert instruction into label type (data,string = data, extern, entry) */
 ELabelType LabelInstructToLblType(int instruction);
 
 /* Set the memory address of label in program */

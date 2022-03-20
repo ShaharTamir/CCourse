@@ -13,8 +13,6 @@
 #include "encoder.h"
 #include "assembler.h"
 
-#define MEM_ADD_OFFSET 100
-
 typedef struct
 {
     int data_count;
@@ -215,8 +213,9 @@ int CheckNewLabel(SAssemblerData *data)
     }
     else if(FALSE != (instruct = ParserIsExtEnt(data->fh->word))) /* word is .entry or .extern */
     {
-        (instruct == INST_ENTRY) ? (data->open_ent = TRUE) : (data->open_ext = TRUE);
-        HandleNewInstructDef(data, instruct);
+        /* set to open relevant file when encoding */
+        (instruct == INST_ENTRY) ? (data->open_ent = TRUE) : (data->open_ext = TRUE); 
+        HandleNewInstructDef(data, instruct); /* validate and add name to sym_table*/
     }
     else if(data->fh->bytes_read != EOF)
     {
@@ -233,12 +232,12 @@ void HandleNewLabelDef(SAssemblerData *data)
     if(ParserValidateName(data->fh->word) && NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
     {
         data->lbl = AddLabelToSymTable(data);
-        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count + MEM_ADD_OFFSET);
+        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
     }
-    else if(iter && LabelIsEntry(iter->data)) /* label is defined only as entry but not yet defined */
+    else if(iter && LabelIsEntry(iter->data)) /* label is defined only as entry but memory not yet defined */
     {
         data->lbl = iter->data;
-        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count + MEM_ADD_OFFSET);
+        LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
     }
     else
     {
