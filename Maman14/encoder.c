@@ -171,6 +171,11 @@ void DestroyEncoderData(SEncoderData *en_data)
     memset(en_data, 0, sizeof(SEncoderData)); /* all is NULL / 0 */
 }
 
+void EncodeDataCodeCount(SEncoderData *en_data, int DC, int IC)
+{
+    fprintf(en_data->obj, "\t%d\t%d\n", IC, DC);
+}
+
 int EncodeLine(SEncoderData *ed)
 {
     int instruction = 0;

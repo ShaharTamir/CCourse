@@ -21,6 +21,8 @@ int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, \
 
 void DestroyEncoderData(SEncoderData *en_data);
 
+void EncodeDataCodeCount(SEncoderData *en_data, int DC, int IC);
+
 int EncodeLine(SEncoderData *ed);
 
 #endif /* __ENCODER_H__ */

@@ -200,7 +200,6 @@ int ValidateTwoVariable(SFunctionHandlerData *fhd, int group_a, int group_b)
         ParserCleanSeparator(fhd->fh->word);
         acc_meth = GetIsValidAccessingMethod(fhd->fh->word);
         fhd->acc_meth_a = acc_meth;
-        /*printf("access_meth group_a: %d\n", acc_meth);*/
 
         if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) && 
             ((1 << acc_meth) & group_a) != 0)

@@ -7,7 +7,6 @@
 #define NUM_FUNCTIONS 16
 #define NUM_INSTRUCTIONS 4
 #define NUM_REGISTERS 16
-#define NUM_SPECIAL_CHARS 7
 #define TRUE 1
 #define FALSE 0
 

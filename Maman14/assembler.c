@@ -44,6 +44,7 @@ static void DestroyAssemblerData(SAssemblerData *data);
         the standard output.
  */
 static int DefineSymbolTable(FILE *in, SAssemblerData *data);
+void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name);
 
 /* FIRST CYCLE FUNCTIONS */
 static int CheckNewLabel(SAssemblerData *data);
@@ -58,7 +59,7 @@ static void HandleCode(SAssemblerData *data);
 void RunAssembler(FILE *in, char *file_name)
 {
     SAssemblerData data;
-    SEncoderData en_data;
+    
     int status = 0;
 
     if(InitAssemblerData(&data))
@@ -67,27 +68,7 @@ void RunAssembler(FILE *in, char *file_name)
 
         if(status)
         {
-            fseek(in, 0, SEEK_SET); /* reset file to begin */
-            if(InitEncoderData(data.fh, data.sym_table, &en_data, file_name, 
-                data.open_ent, data.open_ext))
-            {
-                en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
-
-                while(en_data.fh->bytes_read != EOF)
-                {
-                    ++en_data.fh->line_count;
-                    en_data.fh->index = 0;
-                    if(!EncodeLine(&en_data))
-                    {
-                        fcloseall();
-                        FileHandlerRemoveAll(file_name);
-                        break;
-                    }
-                    en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
-                }
-            }
-
-            DestroyEncoderData(&en_data);
+            EncodeOutput(in, &data, file_name);
         }
     }
 
@@ -172,6 +153,35 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
     }
 
     return data->status;
+}
+
+void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
+{
+    SEncoderData en_data;
+
+
+    fseek(in, 0, SEEK_SET); /* reset file to begin */
+    if(InitEncoderData(data->fh, data->sym_table, &en_data, file_name, 
+        data->open_ent, data->open_ext))
+    {
+        EncodeDataCodeCount(&en_data, data->data_count, data->instruct_count);
+        en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
+
+        while(en_data.fh->bytes_read != EOF)
+        {
+            ++en_data.fh->line_count;
+            en_data.fh->index = 0;
+            if(!EncodeLine(&en_data))
+            {
+                DestroyEncoderData(&en_data);
+                FileHandlerRemoveAll(file_name);
+                break;
+            }
+            en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
+        }
+    }
+
+    DestroyEncoderData(&en_data);
 }
 
 int CheckNewLabel(SAssemblerData *data)
