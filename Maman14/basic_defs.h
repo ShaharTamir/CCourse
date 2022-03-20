@@ -10,7 +10,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#include <colors.h>
+#include "colors.h"
 
 #define ERR(string) printf("%serror: %s%s\n", CLR_RED, string, CLR_RESET)
 #define ERR_AT(string, line) printf("%serror: %s at: %s%d%s\n", CLR_RED, string, CLR_YEL, line, CLR_RESET)

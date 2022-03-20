@@ -2,8 +2,8 @@
 #define _GNU_SOURCE
 #include <stdio.h> /* FILE, fseek */
 
-#include <node.h>
-#include <linked_list.h>
+#include "node.h"
+#include "linked_list.h"
 
 #include "basic_defs.h"
 #include "file_handler.h"
@@ -164,7 +164,7 @@ void EncodeOutput(FILE *in, SAssemblerData *data, char *file_name)
     if(InitEncoderData(data->fh, data->sym_table, &en_data, file_name, 
         data->open_ent, data->open_ext))
     {
-        EncodeDataCodeCount(&en_data, data->data_count, data->instruct_count);
+        EncodeObjHeadline(&en_data, data->data_count, data->instruct_count);
         en_data.fh->bytes_read = getline(&en_data.fh->line, &en_data.fh->line_len, in);
 
         while(en_data.fh->bytes_read != EOF)

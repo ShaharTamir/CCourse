@@ -2,7 +2,7 @@
 #define __ENCODER_H__
 
 #include <stdio.h>
-#include <linked_list.h>
+#include "linked_list.h"
 #include "label.h"
 #include "file_handler.h"
 
@@ -21,7 +21,7 @@ int InitEncoderData(SFileHandlerData *fh, SLinkedList *sym_table, \
 
 void DestroyEncoderData(SEncoderData *en_data);
 
-void EncodeDataCodeCount(SEncoderData *en_data, int DC, int IC);
+void EncodeObjHeadline(SEncoderData *en_data, int DC, int IC);
 
 int EncodeLine(SEncoderData *ed);
 

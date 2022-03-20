@@ -73,9 +73,9 @@ void EncodeLineToObjectFile(FILE *out, int line, int *address)
     int i = 0;
 
     if(*address < FOUR_DIG)
-        fprintf(out, "0%d\t", *address);
+        fprintf(out, "0%d ", *address);
     else
-        fprintf(out, "%d\t", *address);
+        fprintf(out, "%d ", *address);
 
     for(i = NIBBLE_SIZE; i > 0; --i)
     {
@@ -171,7 +171,7 @@ void DestroyEncoderData(SEncoderData *en_data)
     memset(en_data, 0, sizeof(SEncoderData)); /* all is NULL / 0 */
 }
 
-void EncodeDataCodeCount(SEncoderData *en_data, int DC, int IC)
+void EncodeObjHeadline(SEncoderData *en_data, int DC, int IC)
 {
     fprintf(en_data->obj, "\t%d\t%d\n", IC, DC);
 }

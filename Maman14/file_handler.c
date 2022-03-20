@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <colors.h>
+#include "colors.h"
 #include "file_handler.h"
 
 char *FileHandlerGetFileName(const char *file_name, EProgStage stage)

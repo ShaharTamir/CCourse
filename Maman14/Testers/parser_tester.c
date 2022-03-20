@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include <tester.h>
+#include "tester.h"
 #include "../parser.h"
 
 static void TestValidName(TestStatusType*);
