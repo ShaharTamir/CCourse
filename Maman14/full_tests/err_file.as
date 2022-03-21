@@ -1,8 +1,8 @@
 ; file ps.as
 .entry LIST
 
-; invalid name because of '_'
-.entry INVALID_NAME
+; invalid name because of 5 at start, chars that are not number and alphabet, length
+.entry 5INVALID_NAME&legnjkhasdfoijalt12387234mkasdflkj
 
 .extern W
 
@@ -29,9 +29,12 @@ LOOP:   prn #48
 END:    stop
 END:    .string "ab"
 
+; empty label name
+:       stop
+
 STR:    .string "abcd"
 LIST:   .data 6, -9
         .data  -100
 .entry K
-K:      .data 40012331
+K:      .data 40012331                                                          1234
 .extern val1

@@ -183,6 +183,7 @@ int GetIsValidAccessingMethod(char *word)
 
 int ValidateOneVariable(SFunctionHandlerData *fhd, int groups)
 {
+    int more_words = FALSE;
     int acc_meth = 0;
 
     if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) && 
@@ -192,9 +193,14 @@ int ValidateOneVariable(SFunctionHandlerData *fhd, int groups)
         acc_meth = GetIsValidAccessingMethod(fhd->fh->word);        
         fhd->acc_meth_b = acc_meth;
         
-        return !ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) &&
-            ((1 << acc_meth) & groups) != 0;
+        more_words = ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read);
+        if(more_words)
+            ERR("invalid num of parameters, not seperated with ','");
+
+        return !more_words && ((1 << acc_meth) & groups) != 0;
     }
+    else
+        ERR("invalid num of parameters");
 
     return FALSE;
 }
@@ -218,6 +224,8 @@ int ValidateTwoVariable(SFunctionHandlerData *fhd, int group_a, int group_b)
             return ValidateOneVariable(fhd, group_b);
         }
     }
+    else
+        ERR("invalid num of parameters");
 
     return FALSE;
 }

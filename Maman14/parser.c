@@ -20,6 +20,7 @@
 #define ASCII_NUM_TO_INT 48
 #define BASE_DEC 10
 #define INDEX_DIG_OFFSET 2
+#define LINE_LAST_NOTE_OFFSET 2
 
 extern const SFunctions g_func_names[NUM_FUNCTIONS];
 extern const char *g_registers[NUM_REGISTERS];
@@ -70,7 +71,7 @@ int ParserIsNewLabel(char *word)
     int length = 0;
     length = strlen(word);
 
-    if(length > 1 && word[length - 1] == LABEL_DEF)
+    if(length > 0 && word[length - 1] == LABEL_DEF)
     {
         word[length - 1] = DELIMITER;
         return TRUE;
@@ -267,36 +268,49 @@ int ParserCountSeparators(char *line, int curr_index, int line_len)
     return count;
 }
 
+int ParserValidateLineLen(int line_len)
+{
+    return line_len < MAX_LINE_LENGTH;
+}
+
 int ParserValidateName(char *name)
 {
     int len = 0;
     int i = 0;
-    int ret_val = FALSE;
+    int ret_val = TRUE;
 
     len = strlen(name);
 
-    if(len < MAX_LABEL_NAME && len > 0)
+    if(len >= MAX_LABEL_NAME || len <= 0)
     {
-        while((isalpha(name[i]) || isdigit(name[i])) && i < len)
-        {
-            ++i;
-        }
+        ERR("name length is not valid");
+        ret_val = FALSE;
+    }
 
-        if(i == len)
+    if(!(isalpha(name[0])))
+    {
+        ERR("name must start with alphabet letter");
+        ret_val = FALSE;
+    }
+
+    while((isalpha(name[i]) || isdigit(name[i])) && i < len)
+    {
+        ++i;
+    }
+
+    if(i == len)
+    {
+        if(ret_val)
         {
             ret_val = !ParserIsFunction(name) && !ParserIsRegister(name);
-
             if(!ret_val)
                 ERR("name canno't be same as registers or functions");
-        }
-        else
-        {
-            ERR("name may conatin only ascii letters and digits");
-        }
+        }    
     }
     else
     {
-        ERR("name length is not valid");
+        ERR("name may conatin only ascii letters and digits");
+        ret_val = FALSE;
     }
 
     return ret_val;

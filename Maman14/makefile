@@ -4,7 +4,7 @@ GCC_FLAGS = -ansi -Wall -pedantic-errors -g
 PRODUCT = assembler
 TESTS_FOLDER = full_tests/
 OUTPUTS = *.obj *.ent *.ext *.am *.out
-TESTS = ps data_in_mid
+TESTS = ps data_in_mid err_file
 
 $(PRODUCT): objects $(OBJECTS)
 	gcc $(GCC_FLAGS) $(OBJECTS) -o $(PRODUCT)

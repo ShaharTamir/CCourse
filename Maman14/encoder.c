@@ -5,6 +5,7 @@
 #include "basic_defs.h"
 #include "label.h"
 #include "file_handler.h"
+#include "node.h"
 #include "linked_list.h"
 #include "parser.h"
 #include "function.h"
@@ -126,6 +127,7 @@ void EncodeObjHeadline(SEncoderData *en_data, int DC, int IC)
 int EncodeLine(SEncoderData *ed)
 {
     int instruction = 0;
+    SNode *iter = NULL;
 
     ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
 
@@ -134,7 +136,11 @@ int EncodeLine(SEncoderData *ed)
         if(ParserIsNewLabel(ed->fh->word)) /* no encode in obj file for label def */
         {
             if(ed->is_data_encode) /* handle only in 2nd cycle */
-                EncodeLblToEntryFile(ed->ent, LinkListFind(ed->sym_tbl, ed->fh->word, NULL)->data);
+            {
+                iter = LinkListFind(ed->sym_tbl, ed->fh->word, NULL);
+                if(iter)
+                    EncodeLblToEntryFile(ed->ent, iter->data);
+            }
 
             ed->fh->index = ParserNextWord(ed->fh->line, ed->fh->word, ed->fh->index, ed->fh->bytes_read);
         }

@@ -81,7 +81,7 @@ void RunAssembler(FILE *in, char *file_name)
 
         if(!status || !data.status)
         {
-            printf("%sin file: %s.am%s\n", CLR_BOLD, file_name, CLR_RESET);
+            printf("%sin file: %s.am%s\n\n", CLR_BOLD, file_name, CLR_RESET);
         }
     }
 
@@ -141,6 +141,12 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
         data->fh->bytes_read = getline(&data->fh->line, &data->fh->line_len, in);
         data->fh->index = ParserNextWord(data->fh->line, data->fh->word, data->fh->index, data->fh->bytes_read);
         
+        if(!ParserValidateLineLen(data->fh->bytes_read))
+        {
+            ERR_AT("inavlid line length - behaviour is undefined", data->fh->line_count);
+            data->status = FALSE;
+        }
+
         if(CheckNewLabel(data)) /* true means continue parsing line */
         {
             if(data->lbl)

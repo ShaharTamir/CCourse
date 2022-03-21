@@ -67,6 +67,9 @@ int ParserIsMoreWords(char *line, int curr_index, int line_len);
 /* return number of separators to count num of parameters to expect */
 int ParserCountSeparators(char *line, int curr_index, int line_len);
 
+/* if line length is valid - return TRUE, else - FALSE */
+int ParserValidateLineLen(int line_len);
+
 /* verify name is not a function and that contains only alphabet characters. */
 int ParserValidateName(char *name);
 
