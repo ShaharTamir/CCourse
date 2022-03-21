@@ -3,7 +3,7 @@ OBJECTS = node.o linked_list.o basic_defs.o label.o file_handler.o macro.o pre_p
 GCC_FLAGS = -ansi -Wall -pedantic-errors -g
 PRODUCT = assembler
 TESTS_FOLDER = full_tests/
-OUTPUTS = *.obj *.ent *.ext *.am *.out
+OUTPUTS = *.ob *.ent *.ext *.am *.out
 TESTS = ps data_in_mid err_file
 
 $(PRODUCT): objects $(OBJECTS)
@@ -32,4 +32,3 @@ clean: clean-outputs
 	rm -f $(PRODUCT)
 	rm -r -f objects
 	rm -f *.o
-	rm -f *.am

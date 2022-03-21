@@ -171,6 +171,9 @@ int DefineSymbolTable(FILE *in, SAssemblerData *data)
         }
     }
 
+    /* calc data labels (only) relative mem address according to data count at each label def and total instructions count */
+    LinkListForEach(data->sym_table, LabelCalcDataMemAddress, &data->instruct_count);
+
     return data->status;
 }
 
@@ -243,12 +246,10 @@ void HandleNewLabelDef(SAssemblerData *data)
         if(NULL == (iter = LinkListFind(data->sym_table, data->fh->word, NULL)))
         {
             data->lbl = AddLabelToSymTable(data);
-            LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
         }
         else if(iter && LabelIsEntry(iter->data)) /* label is defined only as entry but memory not yet defined */
         {
             data->lbl = iter->data;
-            LabelSetMemAddress(data->lbl, data->data_count + data->instruct_count);
         }
         else
         {
@@ -299,7 +300,8 @@ void HandleString(SAssemblerData *data)
     string_len = ParserIsValidString(data->fh->line, data->fh->index, data->fh->bytes_read);
     if(string_len) /* not 0 means valid */
     {
-         data->data_count += string_len;
+        LabelSetNumEncodeblks(data->lbl, data->data_count); /* if lbl == NULL does nothing */
+        data->data_count += string_len;
     }
     else
     {
@@ -312,6 +314,7 @@ void HandleData(SAssemblerData *data)
 {
     if(ParserIsValidData(data->fh->line, data->fh->index, data->fh->bytes_read))
     {
+        LabelSetNumEncodeblks(data->lbl, data->data_count); /* if lbl == NULL does nothing */
         data->data_count += ParserCountSeparators(data->fh->line, data->fh->index, data->fh->bytes_read) + 1;
     }
     else
@@ -324,6 +327,9 @@ void HandleData(SAssemblerData *data)
 void HandleCode(SAssemblerData *data)
 {
     int func = FALSE;
+
+    if(data->lbl)
+        LabelSetMemAddress(data->lbl, data->instruct_count); /* set code label definitions first */
 
     func = ParserIsFunction(data->fh->word); /* get func index or FALSE */
 

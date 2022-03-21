@@ -24,6 +24,9 @@ ELabelType LabelInstructToLblType(int instruction);
 /* Set the memory address of label in program */
 void LabelSetMemAddress(SLabel *lbl, int mem_address);
 
+/* Set how many encoding line are for this label */
+void LabelSetNumEncodeblks(SLabel *lbl, int cost);
+
 /* Set/replace name of a label */
 void LabelSetName(SLabel *lbl, char *name);
 
@@ -66,5 +69,8 @@ int LabelCompareName(void *lbl, void *str, void *params);
 
 /* destroy wrapper for data structures (linked_list) */
 int LabelDestroyWrapper(void *data, void *params);
+
+/* for-each function to calc mem address of data labels */
+int LabelCalcDataMemAddress(void *data, void *params);
 
 #endif  /* _LABEL_H_ */ 

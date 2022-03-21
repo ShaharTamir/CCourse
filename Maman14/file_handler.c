@@ -7,7 +7,7 @@
 
 char *FileHandlerGetFileName(const char *file_name, EProgStage stage)
 {
-    static char *stages_end[] = {".as", ".am", ".obj", ".ext", ".ent"};
+    static char *stages_end[] = {".as", ".am", ".ob", ".ext", ".ent"};
     char *new_file_name = NULL;
 
     new_file_name = (char *)malloc(strlen(file_name) + strlen(stages_end[stage]) + 1); /* + 1 = '\0' */

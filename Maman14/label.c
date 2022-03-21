@@ -9,6 +9,7 @@
 struct _SLabel
 {
     int type; /* bit field */
+    int blk_count;
     int base_address;
     int offset;
     char *name;
@@ -24,6 +25,7 @@ SLabel *LabelCreate(char *name)
     {
         new_lbl->name = NULL;
         new_lbl->type = 0;
+        new_lbl->blk_count = 0;
         new_lbl-> base_address = 0;
         new_lbl->offset = 0;
 
@@ -80,6 +82,14 @@ void LabelSetMemAddress(SLabel *lbl, int mem_address)
     mem_address += MEM_ADD_OFFSET;
     lbl->offset = mem_address % MEM_MOD;
     lbl->base_address = mem_address - lbl->offset;
+}
+
+void LabelSetNumEncodeblks(SLabel *lbl, int cost)
+{
+    if(!lbl)
+        return;
+    
+    lbl->blk_count = cost;
 }
 
 void LabelSetName(SLabel *lbl, char *name)
@@ -183,6 +193,22 @@ int LabelDestroyWrapper(void *data, void *params)
     lbl = (SLabel *)data;
 
     LabelDestroy(lbl);
+
+    return TRUE;
+}
+
+int LabelCalcDataMemAddress(void *data, void *params)
+{
+    SLabel *lbl = NULL;
+    int *total_inst_count = NULL;
+
+    lbl = (SLabel *)data;
+    total_inst_count = (int *)params;
+
+    if(LabelIsData(lbl))
+    {
+        LabelSetMemAddress(lbl, *total_inst_count + lbl->blk_count);
+    }
 
     return TRUE;
 }
