@@ -145,7 +145,7 @@ int ParserIsIndex(char *word)
 
     len = strlen(word);
 
-    return word[len - 1] == CLOSE_INDEX;
+    return len > 0 && word[len - 1] == CLOSE_INDEX;
 }
 
 int ParserIsNumber(char *word)
