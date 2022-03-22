@@ -217,11 +217,10 @@ int ValidateTwoVariable(SFunctionHandlerData *fhd, int group_a, int group_b)
         acc_meth = GetIsValidAccessingMethod(fhd->fh->word);
         fhd->acc_meth_a = acc_meth;
 
-        if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read) && 
-            ((1 << acc_meth) & group_a) != 0)
+        if(ParserIsMoreWords(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read))
         {
             fhd->fh->index = ParserSkipSeparator(fhd->fh->line, fhd->fh->index, fhd->fh->bytes_read);
-            return ValidateOneVariable(fhd, group_b);
+            return ValidateOneVariable(fhd, group_b) && ((1 << acc_meth) & group_a) != 0;
         }
     }
     else

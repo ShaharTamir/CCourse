@@ -278,7 +278,7 @@ void EncodeFunctLine(SEncoderData *ed, int *line, int func_index)
         /* handle registers in funct line */
         if(access_meth == AC_REG)
         {
-            SetToLine(line, ParserIsRegister(ed->fh->word), reg_bit[i]); /* parser func returns the register number */
+            SetToLine(line, ParserIsRegister(ed->fh->word) - 1, reg_bit[i]); /* parser func returns the register num + 1 */
         }
         else if(access_meth == AC_INDEX)
         {

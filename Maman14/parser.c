@@ -324,11 +324,16 @@ int ParserValidateIndex(char *word)
     int count = 0;
     int i = 0;
 
-    end = strlen(word) - 1;
+    end = strlen(word);
+
+    if(end != sizeof(valid_chars))
+        return FALSE;
+
+    --end; /* end is now last valid index in word */
 
     for(count = 0; count < sizeof(valid_chars); ++count)
     {
-        if(count == 1)
+        if(count == 1) /* index of first digit (from end) */
         {
             for(i = 0; i < sizeof(valid_reg); ++i)
             {

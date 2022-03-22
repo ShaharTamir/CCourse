@@ -6,8 +6,8 @@ const SFunctions g_func_names[NUM_FUNCTIONS] = { {0, 0, 2, "mov"}, {1, 0, 2, "cm
 
 const char *g_instructions[NUM_INSTRUCTIONS] = { ".data", ".string", ".extern", ".entry"};
 
-const char *g_registers[NUM_REGISTERS] = { "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", \
-                        "r10", "r11", "r12", "r13", "r14", "r15", "r16"};
+const char *g_registers[NUM_REGISTERS] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", \
+                        "r10", "r11", "r12", "r13", "r14", "r15"};
 
 void InitGlobals()
 {

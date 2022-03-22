@@ -6,6 +6,8 @@ TESTS_FOLDER = full_tests/
 OUTPUTS = *.ob *.ent *.ext *.am *.out
 TESTS = ps data_in_mid err_file
 
+.SILENT:
+
 $(PRODUCT): objects $(OBJECTS)
 	gcc $(GCC_FLAGS) $(OBJECTS) -o $(PRODUCT)
 	for i in $(OBJECTS); do \
@@ -16,9 +18,14 @@ objects:
 	mkdir objects
 
 $(OBJECTS): $(FILES)
-	gcc -c $(GCC_FLAGS) $(FILES)
+	for i in $(FILES); do \
+		gcc -c $(GCC_FLAGS) $$i; \
+		echo build $$i; \
+	done
+	echo done!;
 
 run-all:
+	echo run tests in $(TESTS_FOLDER); 
 	for i in $(TESTS); do \
 		./$(PRODUCT) $(TESTS_FOLDER)$$i; \
 	done
@@ -27,8 +34,10 @@ clean-outputs:
 	for i in $(OUTPUTS); do \
 		rm -f $(TESTS_FOLDER)$$i; \
 	done
+	echo $(TESTS_FOLDER) cleaned.;
 
 clean: clean-outputs
 	rm -f $(PRODUCT)
 	rm -r -f objects
 	rm -f *.o
+	echo cleaned.;
